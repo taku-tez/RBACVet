@@ -4,12 +4,12 @@
 
 **Goal:** Static analysis of RBAC YAML files with risk scoring.
 
-- [ ] YAML parser (reuse ManifestVet parser)
-- [ ] Rule engine (RB1–5, 40+ rules)
-- [ ] Risk scoring engine (0–100 per ServiceAccount)
-- [ ] TTY / JSON / SARIF formatters
-- [ ] CLI (`--dir`, `--format`, `--ignore`, `--severity`)
-- [ ] 120+ tests
+- [x] YAML parser (reuse ManifestVet parser)
+- [x] Rule engine (RB1–5, 44 rules)
+- [x] Risk scoring engine (0–100 per ServiceAccount)
+- [x] TTY / JSON / SARIF formatters
+- [x] CLI (`--dir`, `--format`, `--ignore`, `--severity`)
+- [x] 131 tests
 - [ ] npm publish
 
 ---
@@ -18,12 +18,12 @@
 
 **Goal:** Analyze RBAC directly from a running cluster.
 
-- [ ] `--cluster` flag — use current kubeconfig
-- [ ] `--context <name>` — kubeconfig context targeting
-- [ ] `--namespace` / `--all-namespaces`
-- [ ] Fetch Role, ClusterRole, RoleBinding, ClusterRoleBinding, ServiceAccount via K8s API
-- [ ] Cross-namespace binding detection
-- [ ] `rbacvet --diff` — compare cluster vs local manifests
+- [x] `--cluster` flag — use current kubeconfig
+- [x] `--context <name>` — kubeconfig context targeting
+- [x] `--namespace` / `--all-namespaces`
+- [x] Fetch Role, ClusterRole, RoleBinding, ClusterRoleBinding, ServiceAccount via K8s API
+- [x] Cross-namespace binding detection (RB6001)
+- [x] `rbacvet --diff` — compare cluster vs local manifests
 
 ---
 
@@ -31,12 +31,12 @@
 
 **Goal:** Visualize and detect privilege escalation paths.
 
-- [ ] Graph builder: ServiceAccount → Role → effective permissions
-- [ ] Reachability analysis: can SA X reach cluster-admin?
-- [ ] `--map` flag — output full escalation graph
-- [ ] DOT format output (Graphviz visualization)
-- [ ] JSON path output for programmatic consumption
-- [ ] Cycle detection in RoleBinding chains
+- [x] Graph builder: ServiceAccount → Role → effective permissions
+- [x] Reachability analysis: can SA X reach cluster-admin?
+- [x] `--map` flag — output full escalation graph
+- [x] DOT format output (Graphviz visualization)
+- [x] JSON path output for programmatic consumption
+- [x] Cycle detection in RoleBinding chains
 
 ---
 
@@ -44,10 +44,10 @@
 
 **Goal:** Generate least-privilege Role replacement suggestions.
 
-- [ ] `--fix` flag — suggest minimal Role with only required permissions
-- [ ] `--fix-lang ja` — Japanese explanations
-- [ ] LLM-powered Role refactoring (given workload, suggest minimal RBAC)
-- [ ] Automated RBAC tightening with `--apply-fixes`
+- [x] `--fix` flag — suggest minimal Role with only required permissions
+- [x] `--fix-lang ja` — Japanese explanations
+- [x] LLM-powered Role refactoring (given workload, suggest minimal RBAC)
+- [x] Automated RBAC tightening with `--apply-fixes`
 
 ---
 
@@ -55,17 +55,17 @@
 
 **Goal:** Enterprise-grade policy enforcement and reporting.
 
-- [ ] `--format html` — interactive HTML report
-- [ ] Per-team RBAC policy files
-- [ ] Exemption management with audit trail
-- [ ] Periodic cluster scan scheduling
-- [ ] Slack / webhook notifications for new violations
+- [x] `--format html` — interactive HTML report
+- [x] Per-team RBAC policy files
+- [x] Exemption management with audit trail
+- [x] Periodic cluster scan scheduling
+- [x] Slack / webhook notifications for new violations
 
 ---
 
 ## Future
 
-- [ ] OPA/Rego custom policy integration
-- [ ] RBAC comparison across environments (dev vs prod)
-- [ ] Service mesh (Istio) authorization policy analysis
-- [ ] CIS Kubernetes Benchmark mapping
+- [x] OPA/Rego custom policy integration
+- [x] RBAC comparison across environments (dev vs prod)
+- [x] Service mesh (Istio) authorization policy analysis
+- [x] CIS Kubernetes Benchmark mapping

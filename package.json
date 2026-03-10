@@ -1,0 +1,38 @@
+{
+  "name": "rbacvet",
+  "version": "0.5.0",
+  "description": "Kubernetes RBAC security analyzer - detects over-privileged roles, privilege escalation paths, and dangerous permission bindings",
+  "main": "dist/index.js",
+  "bin": {
+    "rbacvet": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "lint:tests": "tsc --project tsconfig.test.json",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "kubernetes",
+    "rbac",
+    "security",
+    "linter",
+    "k8s"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "@kubernetes/client-node": "^1.0.0",
+    "chalk": "^4.1.2",
+    "commander": "^12.0.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
