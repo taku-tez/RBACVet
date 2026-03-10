@@ -31,6 +31,19 @@ export const RB6001: Rule = {
   },
 };
 
+/**
+ * The Kubernetes bootstrap `cluster-admin` CRB binding `system:masters` is
+ * hardcoded in the API server and cannot be removed or modified at runtime.
+ * It exists in every cluster by design. Flagging it as an error creates noise
+ * with no actionable remediation — downgrade to info so it remains visible
+ * but does not inflate the error count.
+ *
+ * Any *non-bootstrap* binding to system:masters is still reported as error.
+ */
+const K8S_BOOTSTRAP_MASTERS_BINDINGS = new Set([
+  'cluster-admin', // kubernetes.io/bootstrapping: rbac-defaults — created by kube-apiserver
+]);
+
 export const RB6002: Rule = {
   id: 'RB6002',
   severity: 'error',
@@ -40,10 +53,13 @@ export const RB6002: Rule = {
     const allBindings = [...ctx.graph.roleBindings, ...ctx.graph.clusterRoleBindings];
     for (const b of allBindings) {
       if (b.subjects.some(s => s.kind === 'Group' && s.name === 'system:masters')) {
+        const isBootstrap = K8S_BOOTSTRAP_MASTERS_BINDINGS.has(b.metadata.name);
         violations.push({
           rule: 'RB6002',
-          severity: 'error',
-          message: `${bindingLabel(b)} binds to 'system:masters' — this group bypasses RBAC entirely and cannot be revoked at runtime`,
+          severity: isBootstrap ? 'info' : 'error',
+          message: isBootstrap
+            ? `${bindingLabel(b)} binds to 'system:masters' — Kubernetes bootstrap default (hardcoded in API server, cannot be removed)`
+            : `${bindingLabel(b)} binds to 'system:masters' — this group bypasses RBAC entirely and cannot be revoked at runtime`,
           resource: bindingLabel(b),
           file: b.sourceFile,
           line: b.sourceLine,

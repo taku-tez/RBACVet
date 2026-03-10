@@ -1,6 +1,17 @@
 import type { Rule, RuleContext, Violation } from '../types';
 import { bindingLabel, makeRoleKey, resourceLabel, isSystemResource } from '../utils';
 
+/**
+ * Kubernetes/GKE bootstrap ClusterRoles that are intentionally bound to
+ * system:unauthenticated. These only expose non-resource health/version
+ * endpoints (GET /healthz /livez /readyz /version) and carry no k8s resource
+ * access — binding them to unauthenticated users is safe and expected.
+ */
+const SAFE_UNAUTHENTICATED_ROLES = new Set([
+  'system:public-info-viewer', // /healthz /livez /readyz /version (read-only, non-resource)
+  'system:discovery',          // API group discovery endpoints
+]);
+
 export const RB5001: Rule = {
   id: 'RB5001',
   severity: 'error',
@@ -12,16 +23,20 @@ export const RB5001: Rule = {
       const hasUnauth = b.subjects.some(s =>
         s.kind === 'Group' && s.name === 'system:unauthenticated'
       );
-      if (hasUnauth) {
-        violations.push({
-          rule: 'RB5001',
-          severity: 'error',
-          message: `${bindingLabel(b)} binds to 'system:unauthenticated' — grants access to anonymous users`,
-          resource: bindingLabel(b),
-          file: b.sourceFile,
-          line: b.sourceLine,
-        });
-      }
+      if (!hasUnauth) continue;
+
+      // Skip Kubernetes bootstrap bindings that only expose health/version endpoints.
+      // These are intentional defaults required for LB health checks and monitoring.
+      if (SAFE_UNAUTHENTICATED_ROLES.has(b.roleRef.name)) continue;
+
+      violations.push({
+        rule: 'RB5001',
+        severity: 'error',
+        message: `${bindingLabel(b)} binds to 'system:unauthenticated' — grants access to anonymous users`,
+        resource: bindingLabel(b),
+        file: b.sourceFile,
+        line: b.sourceLine,
+      });
     }
     return violations;
   },
