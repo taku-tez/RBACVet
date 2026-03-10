@@ -20,7 +20,7 @@ export const RB3001: Rule = {
           violations.push({
             rule: 'RB3001',
             severity: 'warning',
-            message: `${resourceLabel(role)} grants read access to 'secrets'`,
+            message: `${resourceLabel(role)} grants read access to 'secrets' (if this is a system component, consider using --include-system to suppress)`,
             resource: resourceLabel(role),
             file: role.sourceFile,
             line: role.sourceLine,
@@ -190,13 +190,44 @@ export const RB3008: Rule = {
   description: 'Role grants access to `persistentvolumes`',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
+    const pvResources = ['persistentvolumes', 'persistentvolumeclaims', 'volumeattachments'];
     for (const role of allRoles(ctx)) {
       for (const rule of role.rules) {
-        if (hasResource(rule, 'persistentvolumes') && hasAnyVerb(rule, ['get', 'list', 'create', 'update', 'patch', 'delete'])) {
+        const targetsPV = pvResources.some(r => rule.resources.includes(r) || rule.resources.includes('*'));
+        if (targetsPV && hasAnyVerb(rule, ['get', 'list', 'create', 'update', 'patch', 'delete'])) {
           violations.push({
             rule: 'RB3008',
             severity: 'warning',
-            message: `${resourceLabel(role)} grants access to 'persistentvolumes' — can access persistent storage`,
+            message: `${resourceLabel(role)} can access persistent storage (PersistentVolumes/PVCs/VolumeAttachments)`,
+            resource: resourceLabel(role),
+            file: role.sourceFile,
+            line: role.sourceLine,
+          });
+          break;
+        }
+      }
+    }
+    return violations;
+  },
+};
+
+export const RB3009: Rule = {
+  id: 'RB3009',
+  severity: 'error',
+  description: 'Role accesses secrets via wildcard apiGroup — broad secret exposure',
+  check(ctx: RuleContext): Violation[] {
+    const violations: Violation[] = [];
+    for (const role of allRoles(ctx)) {
+      for (const rule of role.rules) {
+        if (!rule.apiGroups.includes('*')) continue;
+        if (!rule.resources.includes('secrets') && !rule.resources.includes('*')) continue;
+        // RB3001/3002 already handles core ('') apiGroup; this catches wildcard group
+        const hasAccess = rule.verbs.some(v => v !== '') || rule.verbs.includes('*');
+        if (hasAccess) {
+          violations.push({
+            rule: 'RB3009',
+            severity: 'error',
+            message: `${resourceLabel(role)} accesses secrets via wildcard apiGroup — exposes secrets across all API groups`,
             resource: resourceLabel(role),
             file: role.sourceFile,
             line: role.sourceLine,
@@ -210,5 +241,5 @@ export const RB3008: Rule = {
 };
 
 export const RB3_RULES: Rule[] = [
-  RB3001, RB3002, RB3003, RB3004, RB3005, RB3006, RB3007, RB3008,
+  RB3001, RB3002, RB3003, RB3004, RB3005, RB3006, RB3007, RB3008, RB3009,
 ];

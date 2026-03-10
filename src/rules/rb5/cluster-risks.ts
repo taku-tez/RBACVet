@@ -1,5 +1,5 @@
 import type { Rule, RuleContext, Violation } from '../types';
-import { bindingLabel, makeRoleKey, resourceLabel } from '../utils';
+import { bindingLabel, makeRoleKey, resourceLabel, isSystemResource } from '../utils';
 
 export const RB5001: Rule = {
   id: 'RB5001',
@@ -59,15 +59,18 @@ export const RB5003: Rule = {
   description: 'ClusterRoleBinding count exceeds threshold',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
-    const threshold = 10;
-    const count = ctx.graph.clusterRoleBindings.length;
+    const threshold = 50;
+    const userBindings = ctx.graph.clusterRoleBindings.filter(
+      b => !isSystemResource(b.metadata.name) && !isSystemResource(b.roleRef.name)
+    );
+    const count = userBindings.length;
     if (count > threshold) {
       violations.push({
         rule: 'RB5003',
         severity: 'warning',
-        message: `Found ${count} ClusterRoleBindings (threshold: ${threshold}) — review cluster-wide permission grants`,
+        message: `Found ${count} user-defined ClusterRoleBindings (threshold: ${threshold}) — review cluster-wide permission grants`,
         resource: 'ClusterRoleBinding/*',
-        file: ctx.graph.clusterRoleBindings[0]?.sourceFile || '',
+        file: userBindings[0]?.sourceFile || '',
         line: 1,
       });
     }

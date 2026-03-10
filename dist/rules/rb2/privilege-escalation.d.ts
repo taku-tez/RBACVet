@@ -1,0 +1,13 @@
+import type { Rule, ResourceGraph } from '../types';
+export declare const RB2001: Rule;
+export declare const RB2002: Rule;
+export declare const RB2003: Rule;
+export declare const RB2004: Rule;
+export declare const RB2005: Rule;
+export declare const RB2006: Rule;
+export declare const RB2007: Rule;
+export declare const RB2008: Rule;
+export declare const RB2009: Rule;
+export declare function findEscalationChain(saName: string, saNamespace: string, graph: ResourceGraph, trusted: Set<string>): string[] | null;
+export declare const RB2010: Rule;
+export declare const RB2_RULES: Rule[];

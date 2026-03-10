@@ -90,18 +90,20 @@ export const RB1004: Rule = {
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of allRoles(ctx)) {
-      for (const rule of role.rules) {
-        if (hasVerb(rule, 'create') && hasVerb(rule, 'delete')) {
-          violations.push({
-            rule: 'RB1004',
-            severity: 'error',
-            message: `${resourceLabel(role)} combines 'create' and 'delete' on the same resource`,
-            resource: resourceLabel(role),
-            file: role.sourceFile,
-            line: role.sourceLine,
-          });
-          break;
-        }
+      // Skip roles already caught by RB1001 (wildcard verbs)
+      if (role.rules.some(r => r.verbs.includes('*'))) continue;
+      const allVerbs = new Set(role.rules.flatMap(r => r.verbs));
+      const hasCreate = allVerbs.has('create');
+      const hasDelete = allVerbs.has('delete') || allVerbs.has('deletecollection');
+      if (hasCreate && hasDelete) {
+        violations.push({
+          rule: 'RB1004',
+          severity: 'error',
+          message: `${resourceLabel(role)} combines 'create' and 'delete' on the same resource`,
+          resource: resourceLabel(role),
+          file: role.sourceFile,
+          line: role.sourceLine,
+        });
       }
     }
     return violations;
@@ -115,21 +117,20 @@ export const RB1005: Rule = {
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of allRoles(ctx)) {
-      for (const rule of role.rules) {
-        const hasUpdate = hasVerb(rule, 'update');
-        const hasPatch = hasVerb(rule, 'patch');
-        const noRestriction = hasWildcard(rule.resources);
-        if (hasUpdate && hasPatch && noRestriction) {
-          violations.push({
-            rule: 'RB1005',
-            severity: 'warning',
-            message: `${resourceLabel(role)} combines 'update' and 'patch' on all resources`,
-            resource: resourceLabel(role),
-            file: role.sourceFile,
-            line: role.sourceLine,
-          });
-          break;
-        }
+      // Skip roles already caught by RB1001 (wildcard verbs)
+      if (role.rules.some(r => r.verbs.includes('*'))) continue;
+      const allVerbs = new Set(role.rules.flatMap(r => r.verbs));
+      const hasUpdate = allVerbs.has('update');
+      const hasPatch = allVerbs.has('patch');
+      if (hasUpdate && hasPatch) {
+        violations.push({
+          rule: 'RB1005',
+          severity: 'warning',
+          message: `${resourceLabel(role)} combines 'update' and 'patch' on all resources`,
+          resource: resourceLabel(role),
+          file: role.sourceFile,
+          line: role.sourceLine,
+        });
       }
     }
     return violations;
@@ -166,7 +167,7 @@ export const RB1006: Rule = {
 
 export const RB1007: Rule = {
   id: 'RB1007',
-  severity: 'warning',
+  severity: 'info',
   description: 'Role grants `list` on all resources',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -175,7 +176,7 @@ export const RB1007: Rule = {
         if (hasVerb(rule, 'list') && hasWildcard(rule.resources)) {
           violations.push({
             rule: 'RB1007',
-            severity: 'warning',
+            severity: 'info',
             message: `${resourceLabel(role)} grants 'list' on all resources`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -191,7 +192,7 @@ export const RB1007: Rule = {
 
 export const RB1008: Rule = {
   id: 'RB1008',
-  severity: 'warning',
+  severity: 'info',
   description: 'Role grants `watch` on all resources',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -200,7 +201,7 @@ export const RB1008: Rule = {
         if (hasVerb(rule, 'watch') && hasWildcard(rule.resources)) {
           violations.push({
             rule: 'RB1008',
-            severity: 'warning',
+            severity: 'info',
             message: `${resourceLabel(role)} grants 'watch' on all resources`,
             resource: resourceLabel(role),
             file: role.sourceFile,

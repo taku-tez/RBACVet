@@ -1,5 +1,6 @@
 import type { EscalationGraph, GraphNode } from './builder';
 import type { ServiceAccountScore } from '../engine/scorer';
+import type { ResourceGraph } from '../rules/types';
 
 export interface PathNode {
   kind: string;
@@ -13,6 +14,64 @@ export interface EscalationPath {
   endsAtClusterAdmin: boolean;
   score?: number;
   riskLevel?: string;
+}
+
+export interface IndirectEscalationPath {
+  serviceAccount: string;
+  path: string[];
+  riskLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+}
+
+/**
+ * Detects ServiceAccounts that can modify RoleBindings/ClusterRoleBindings,
+ * enabling them to add themselves to high-privilege bindings (2-hop escalation).
+ */
+export function findIndirectEscalationPaths(graph: ResourceGraph): IndirectEscalationPath[] {
+  const paths: IndirectEscalationPath[] = [];
+  const allBindings = [...graph.roleBindings, ...graph.clusterRoleBindings];
+
+  for (const binding of allBindings) {
+    const saSubjects = binding.subjects.filter(s => s.kind === 'ServiceAccount');
+    if (saSubjects.length === 0) continue;
+
+    const role = binding.roleRef.kind === 'ClusterRole'
+      ? graph.clusterRoles.get(binding.roleRef.name)
+      : graph.roles.get(
+          binding.metadata.namespace
+            ? `${binding.metadata.namespace}/${binding.roleRef.name}`
+            : binding.roleRef.name,
+        );
+    if (!role) continue;
+
+    const canModifyBindings = role.rules.some(r => {
+      const targetsBindings =
+        r.resources.includes('rolebindings') ||
+        r.resources.includes('clusterrolebindings') ||
+        r.resources.includes('*');
+      const hasWrite = ['create', 'update', 'patch', 'delete', '*'].some(v => r.verbs.includes(v));
+      return targetsBindings && hasWrite;
+    });
+
+    if (!canModifyBindings) continue;
+
+    for (const subject of saSubjects) {
+      const saName = subject.namespace
+        ? `${subject.namespace}/${subject.name}`
+        : subject.name;
+      paths.push({
+        serviceAccount: saName,
+        path: [
+          `ServiceAccount/${saName}`,
+          `${binding.kind}/${binding.metadata.name}`,
+          `${role.kind}/${role.metadata.name}`,
+          '→ can modify RoleBindings (indirect escalation)',
+        ],
+        riskLevel: 'HIGH',
+      });
+    }
+  }
+
+  return paths;
 }
 
 function parseNodeId(id: string, nodes: Map<string, GraphNode>): PathNode | null {

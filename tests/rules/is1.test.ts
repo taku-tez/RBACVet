@@ -48,13 +48,13 @@ describe('IS1002 - wildcard principal', () => {
     expect(hasViolation(violations, 'IS1002')).toBe(true);
   });
 
-  it('flags wildcard principal in DENY rule', () => {
+  it('does not fire for DENY policy with wildcard principal (deny-all-then-allow pattern)', () => {
     const policy = makeAuthorizationPolicy('deny-wild', {
       action: 'DENY',
       rules: [{ from: [{ source: { principals: ['*'] } }] }],
     });
     const { violations } = analyzeResources2([policy]);
-    expect(hasViolation(violations, 'IS1002')).toBe(true);
+    expect(hasViolation(violations, 'IS1002')).toBe(false);
   });
 
   it('does not flag specific principal', () => {

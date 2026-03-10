@@ -67,6 +67,13 @@ describe('RB2004 - modify Role/ClusterRole', () => {
     ]);
     expect(hasViolation(violations, 'RB2004')).toBe(false);
   });
+
+  it('flags write access via wildcard resources', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('wildcard-admin', [{ apiGroups: ['rbac.authorization.k8s.io'], resources: ['*'], verbs: ['create'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB2004')).toBe(true);
+  });
 });
 
 describe('RB2005 - modify RoleBinding/ClusterRoleBinding', () => {
@@ -82,6 +89,13 @@ describe('RB2005 - modify RoleBinding/ClusterRoleBinding', () => {
       makeRole('binding-reader', [{ apiGroups: ['rbac.authorization.k8s.io'], resources: ['rolebindings'], verbs: ['list'] }]),
     ]);
     expect(hasViolation(violations, 'RB2005')).toBe(false);
+  });
+
+  it('flags write access via wildcard resources', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('wildcard-binding-admin', [{ apiGroups: ['rbac.authorization.k8s.io'], resources: ['*'], verbs: ['create'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB2005')).toBe(true);
   });
 });
 
@@ -190,5 +204,40 @@ describe('RB2010 - privilege escalation chain', () => {
       makeBinding('safe-sa', 'pod-reader', 'default'),
     ]);
     expect(hasViolation(violations, 'RB2010')).toBe(false);
+  });
+});
+
+describe('RB2011 - ValidatingAdmissionPolicies write access', () => {
+  it('fires for role with validatingadmissionpolicies write access', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('vap-admin', [{
+        apiGroups: ['admissionregistration.k8s.io'],
+        resources: ['validatingadmissionpolicies'],
+        verbs: ['create', 'update'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB2011')).toBe(true);
+  });
+
+  it('fires for role with validatingadmissionpolicybindings write access', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('vapb-admin', [{
+        apiGroups: ['admissionregistration.k8s.io'],
+        resources: ['validatingadmissionpolicybindings'],
+        verbs: ['patch'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB2011')).toBe(true);
+  });
+
+  it('does not fire for read-only access', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('vap-reader', [{
+        apiGroups: ['admissionregistration.k8s.io'],
+        resources: ['validatingadmissionpolicies'],
+        verbs: ['get', 'list'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB2011')).toBe(false);
   });
 });

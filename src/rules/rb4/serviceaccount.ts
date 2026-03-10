@@ -9,7 +9,7 @@ function saLabel(sa: ServiceAccount): string {
 
 export const RB4001: Rule = {
   id: 'RB4001',
-  severity: 'warning',
+  severity: 'info',
   description: '`automountServiceAccountToken` not set to `false`',
   cisId: 'CIS 5.1.6',
   check(ctx: RuleContext): Violation[] {
@@ -18,7 +18,7 @@ export const RB4001: Rule = {
       if (sa.automountServiceAccountToken !== false) {
         violations.push({
           rule: 'RB4001',
-          severity: 'warning',
+          severity: 'info',
           message: `${saLabel(sa)} does not set automountServiceAccountToken: false — token is auto-mounted`,
           resource: saLabel(sa),
           file: sa.sourceFile,
@@ -232,6 +232,47 @@ export const RB4008: Rule = {
   },
 };
 
+export const RB4009: Rule = {
+  id: 'RB4009',
+  severity: 'warning',
+  description: 'ServiceAccount can create pods — potential token theft via pod spec',
+  check(ctx: RuleContext): Violation[] {
+    const violations: Violation[] = [];
+    const allBindings = [...ctx.graph.roleBindings, ...ctx.graph.clusterRoleBindings];
+    for (const binding of allBindings) {
+      const saSubjects = binding.subjects.filter(s => s.kind === 'ServiceAccount');
+      if (saSubjects.length === 0) continue;
+
+      // Find the referenced role
+      const role = binding.roleRef.kind === 'ClusterRole'
+        ? ctx.graph.clusterRoles.get(binding.roleRef.name)
+        : ctx.graph.roles.get(makeRoleKey(binding.roleRef.name, binding.metadata.namespace));
+      if (!role) continue;
+
+      const canCreatePods = role.rules.some(r =>
+        (r.resources.includes('pods') || r.resources.includes('*')) &&
+        (r.verbs.includes('create') || r.verbs.includes('*'))
+      );
+      if (canCreatePods) {
+        for (const subject of saSubjects) {
+          const saName = subject.namespace
+            ? `ServiceAccount/${subject.namespace}/${subject.name}`
+            : `ServiceAccount/${subject.name}`;
+          violations.push({
+            rule: 'RB4009',
+            severity: 'warning',
+            message: `${saName} can create pods — attacker can mount arbitrary SA tokens via pod spec`,
+            resource: saName,
+            file: binding.sourceFile,
+            line: binding.sourceLine,
+          });
+        }
+      }
+    }
+    return violations;
+  },
+};
+
 export const RB4_RULES: Rule[] = [
-  RB4001, RB4002, RB4003, RB4004, RB4005, RB4006, RB4007, RB4008,
+  RB4001, RB4002, RB4003, RB4004, RB4005, RB4006, RB4007, RB4008, RB4009,
 ];

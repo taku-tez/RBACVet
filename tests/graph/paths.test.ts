@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { extractPaths } from '../../src/graph/paths';
+import { extractPaths, findIndirectEscalationPaths } from '../../src/graph/paths';
 import { buildEscalationGraph } from '../../src/graph/builder';
 import {
   makeServiceAccount, makeClusterRole, makeClusterBinding,
   makeRole, makeBinding, analyzeResources2,
 } from '../helpers';
+import type { ResourceGraph } from '../../src/rules/types';
 
 function buildGraphAndScores(...args: Parameters<typeof analyzeResources2>) {
   const result = analyzeResources2(...args);
@@ -88,5 +89,36 @@ describe('extractPaths', () => {
     const paths = extractPaths(egraph, scores);
     expect(paths[0].riskLevel).toBeDefined();
     expect(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).toContain(paths[0].riskLevel);
+  });
+});
+
+describe('findIndirectEscalationPaths', () => {
+  function buildGraph(resources: ReturnType<typeof makeServiceAccount | typeof makeRole | typeof makeBinding>[]): ResourceGraph {
+    return analyzeResources2(resources as Parameters<typeof analyzeResources2>[0]).graph;
+  }
+
+  it('returns a path for SA bound to role with rolebinding write access', () => {
+    const graph = buildGraph([
+      makeServiceAccount('binding-editor', 'default', false),
+      makeRole('rb-writer', [{ apiGroups: ['rbac.authorization.k8s.io'], resources: ['rolebindings'], verbs: ['create', 'update', 'patch'] }]),
+      makeBinding('binding-editor', 'rb-writer', 'default'),
+    ]);
+    const paths = findIndirectEscalationPaths(graph);
+    expect(paths.length).toBeGreaterThan(0);
+    const path = paths.find(p => p.serviceAccount.includes('binding-editor'));
+    expect(path).toBeDefined();
+    expect(path!.riskLevel).toBe('HIGH');
+    expect(path!.path.some(s => s.includes('indirect escalation'))).toBe(true);
+  });
+
+  it('returns empty for SA with only read access', () => {
+    const graph = buildGraph([
+      makeServiceAccount('reader-sa', 'default', false),
+      makeRole('rb-reader', [{ apiGroups: ['rbac.authorization.k8s.io'], resources: ['rolebindings'], verbs: ['get', 'list', 'watch'] }]),
+      makeBinding('reader-sa', 'rb-reader', 'default'),
+    ]);
+    const paths = findIndirectEscalationPaths(graph);
+    const match = paths.find(p => p.serviceAccount.includes('reader-sa'));
+    expect(match).toBeUndefined();
   });
 });

@@ -37,7 +37,8 @@ export const IS1002: Rule = {
     const violations: Violation[] = [];
     for (const policy of ctx.graph.authorizationPolicies) {
       const action = policy.spec.action ?? 'ALLOW';
-      if (action !== 'ALLOW' && action !== 'DENY') continue;
+      // Only flag ALLOW policies (DENY with * is intentional: deny-all-then-allow pattern)
+      if (action === 'DENY') continue; // skip
       for (const rule of policy.spec.rules ?? []) {
         for (const from of rule.from ?? []) {
           if (from.source.principals?.includes('*')) {

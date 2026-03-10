@@ -143,3 +143,29 @@ describe('RB4008 - SA token projected without expiry', () => {
     expect(hasViolation(violations, 'RB4008')).toBe(false);
   });
 });
+
+describe('RB4009 - SA can create pods', () => {
+  it('fires when SA is bound to role that allows create on pods', () => {
+    const sa = makeServiceAccount('pod-creator-sa', 'default', false);
+    const role = makeRole('pod-creator-role', [{ apiGroups: [''], resources: ['pods'], verbs: ['create'] }]);
+    const binding = makeBinding('pod-creator-sa', 'pod-creator-role', 'default');
+    const { violations } = analyzeResources2([sa, role, binding]);
+    expect(hasViolation(violations, 'RB4009')).toBe(true);
+  });
+
+  it('fires when SA is bound to ClusterRole that allows create on pods', () => {
+    const sa = makeServiceAccount('pod-creator-sa', 'default', false);
+    const role = makeClusterRole('pod-creator-clusterrole', [{ apiGroups: [''], resources: ['pods'], verbs: ['create'] }]);
+    const binding = makeClusterBinding('pod-creator-sa', 'pod-creator-clusterrole', 'default');
+    const { violations } = analyzeResources2([sa, role, binding]);
+    expect(hasViolation(violations, 'RB4009')).toBe(true);
+  });
+
+  it('does not fire when SA can only read pods', () => {
+    const sa = makeServiceAccount('pod-reader-sa', 'default', false);
+    const role = makeRole('pod-reader-role', [{ apiGroups: [''], resources: ['pods'], verbs: ['get', 'list'] }]);
+    const binding = makeBinding('pod-reader-sa', 'pod-reader-role', 'default');
+    const { violations } = analyzeResources2([sa, role, binding]);
+    expect(hasViolation(violations, 'RB4009')).toBe(false);
+  });
+});

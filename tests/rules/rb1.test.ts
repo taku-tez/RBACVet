@@ -118,6 +118,16 @@ describe('RB1004 - create + delete on same resource', () => {
     ]);
     expect(hasViolation(violations, 'RB1004')).toBe(false);
   });
+
+  it('flags create in one rule and delete in another rule of the same role', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('cross-rule-destroyer', [
+        { apiGroups: [''], resources: ['pods'], verbs: ['create'] },
+        { apiGroups: [''], resources: ['deployments'], verbs: ['delete'] },
+      ]),
+    ]);
+    expect(hasViolation(violations, 'RB1004')).toBe(true);
+  });
 });
 
 describe('RB1005 - update + patch on all resources', () => {
@@ -132,11 +142,21 @@ describe('RB1005 - update + patch on all resources', () => {
     expect(hasViolation(violations, 'RB1005')).toBe(true);
   });
 
-  it('does not flag update + patch on specific resource', () => {
+  it('does not flag update alone (no patch)', () => {
     const { violations } = analyzeResources2([
-      makeRole('pod-patcher', [{ apiGroups: [''], resources: ['pods'], verbs: ['update', 'patch'] }]),
+      makeRole('pod-updater', [{ apiGroups: [''], resources: ['pods'], verbs: ['update'] }]),
     ]);
     expect(hasViolation(violations, 'RB1005')).toBe(false);
+  });
+
+  it('flags update in one rule and patch in another rule of the same role', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('cross-rule-patcher', [
+        { apiGroups: [''], resources: ['pods'], verbs: ['update'] },
+        { apiGroups: ['apps'], resources: ['deployments'], verbs: ['patch'] },
+      ]),
+    ]);
+    expect(hasViolation(violations, 'RB1005')).toBe(true);
   });
 });
 

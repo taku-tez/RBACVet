@@ -50,3 +50,7 @@ export function isClusterAdminEquivalent(role: Role): boolean {
   }
   return false;
 }
+
+export function isSystemResource(name: string): boolean {
+  return name.startsWith('system:') || name.startsWith('kubeadm:');
+}

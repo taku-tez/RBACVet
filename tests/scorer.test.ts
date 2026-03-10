@@ -125,4 +125,47 @@ describe('Risk Scorer', () => {
     expect(sa).toBeDefined();
     expect(sa!.name).toContain('production');
   });
+
+  it('SA score increases when bound role has error violations', () => {
+    // A role with escalate verb will trigger an RB2002 error violation on the role resource
+    const { scores } = analyzeResources2([
+      makeServiceAccount('escalate-sa', 'default', false),
+      makeRole('escalate-role', [{ apiGroups: ['rbac.authorization.k8s.io'], resources: ['roles'], verbs: ['escalate'] }]),
+      makeBinding('escalate-sa', 'escalate-role', 'default'),
+    ]);
+    const sa = scores.find(s => s.name.includes('escalate-sa'));
+    expect(sa).toBeDefined();
+    // Should have reasons from the bound role's violations
+    const hasRoleViolationReason = sa!.reasons.some(r => r.includes('[via'));
+    expect(hasRoleViolationReason).toBe(true);
+    // Score should be elevated above baseline (automount disabled = 0, so any role violation adds points)
+    expect(sa!.score).toBeGreaterThan(0);
+  });
+
+  it('compound risk (create pods + get secrets) increases score by at least 20 points', () => {
+    // SA with only pod create
+    const { scores: scoresCreate } = analyzeResources2([
+      makeServiceAccount('pod-creator', 'default', false),
+      makeRole('pod-create-role', [{ apiGroups: [''], resources: ['pods'], verbs: ['create'] }]),
+      makeBinding('pod-creator', 'pod-create-role', 'default'),
+    ]);
+    const saCreate = scoresCreate.find(s => s.name.includes('pod-creator'));
+
+    // SA with both pod create and secret read (compound risk)
+    const { scores: scoresCompound } = analyzeResources2([
+      makeServiceAccount('compound-sa', 'default', false),
+      makeRole('compound-role', [
+        { apiGroups: [''], resources: ['pods'], verbs: ['create'] },
+        { apiGroups: [''], resources: ['secrets'], verbs: ['get'] },
+      ]),
+      makeBinding('compound-sa', 'compound-role', 'default'),
+    ]);
+    const saCompound = scoresCompound.find(s => s.name.includes('compound-sa'));
+
+    expect(saCompound).toBeDefined();
+    expect(saCreate).toBeDefined();
+    // Compound SA should score at least 20 points more than pod-only SA
+    expect(saCompound!.score).toBeGreaterThanOrEqual(saCreate!.score + 20);
+    expect(saCompound!.reasons.some(r => r.includes('compound risk'))).toBe(true);
+  });
 });

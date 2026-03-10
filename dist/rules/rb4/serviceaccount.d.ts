@@ -1,0 +1,10 @@
+import type { Rule } from '../types';
+export declare const RB4001: Rule;
+export declare const RB4002: Rule;
+export declare const RB4003: Rule;
+export declare const RB4004: Rule;
+export declare const RB4005: Rule;
+export declare const RB4006: Rule;
+export declare const RB4007: Rule;
+export declare const RB4008: Rule;
+export declare const RB4_RULES: Rule[];

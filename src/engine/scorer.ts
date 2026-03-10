@@ -100,6 +100,51 @@ export function computeScores(
       }
     }
 
+    // Also score violations on roles bound to this SA
+    for (const binding of allBindings) {
+      const hasSa = binding.subjects.some(s =>
+        s.kind === 'ServiceAccount' && s.name === sa.metadata.name
+      );
+      if (!hasSa) continue;
+
+      const role = binding.roleRef.kind === 'ClusterRole'
+        ? graph.clusterRoles.get(binding.roleRef.name)
+        : graph.roles.get(`${binding.metadata.namespace || ns}/${binding.roleRef.name}`);
+      if (!role) continue;
+
+      const roleNs = role.metadata.namespace ? `${role.metadata.namespace}/` : '';
+      const roleResource = `${role.kind}/${roleNs}${role.metadata.name}`;
+      const roleViolations = violations.filter(v => v.resource === roleResource);
+      for (const v of roleViolations) {
+        if (v.severity === 'error') score += 15;
+        else if (v.severity === 'warning') score += 5;
+        reasons.push(`[via ${roleResource}] ${v.rule}: ${v.message}`);
+      }
+    }
+
+    // Compound risk: can create pods AND get secrets = token theft vector
+    let canCreatePods = false;
+    let canGetSecrets = false;
+    for (const binding of boundBindings) {
+      let role = binding.roleRef.kind === 'ClusterRole'
+        ? graph.clusterRoles.get(binding.roleRef.name)
+        : graph.roles.get(`${binding.metadata.namespace || ns}/${binding.roleRef.name}`);
+      if (!role) continue;
+      for (const r of role.rules) {
+        const targetsPods = r.resources.includes('pods') || r.resources.includes('*');
+        const hasCreateVerb = r.verbs.includes('create') || r.verbs.includes('*');
+        if (targetsPods && hasCreateVerb) canCreatePods = true;
+
+        const targetsSecrets = r.resources.includes('secrets') || r.resources.includes('*');
+        const hasGetVerb = r.verbs.includes('get') || r.verbs.includes('list') || r.verbs.includes('*');
+        if (targetsSecrets && hasGetVerb) canGetSecrets = true;
+      }
+    }
+    if (canCreatePods && canGetSecrets) {
+      score += 20;
+      reasons.push('compound risk: pod creation + secret access enables token theft (+20)');
+    }
+
     // Escalation chain check
     const chain = findEscalationChain(sa.metadata.name, ns, graph, trustedSet);
     if (chain) {

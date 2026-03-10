@@ -55,15 +55,23 @@ describe('RB5002 - RoleBinding to system:anonymous', () => {
 });
 
 describe('RB5003 - ClusterRoleBinding count exceeds threshold', () => {
-  it('flags when more than 10 ClusterRoleBindings', () => {
-    const bindings = Array.from({ length: 11 }, (_, i) => makeClusterBinding(`sa${i}`, 'some-role', 'default'));
+  it('flags when more than 50 user-defined ClusterRoleBindings', () => {
+    const bindings = Array.from({ length: 51 }, (_, i) => makeClusterBinding(`sa${i}`, 'some-role', 'default'));
     const { violations } = analyzeResources2(bindings);
     expect(hasViolation(violations, 'RB5003')).toBe(true);
   });
 
-  it('does not flag with 10 or fewer ClusterRoleBindings', () => {
+  it('does not flag with 50 or fewer ClusterRoleBindings', () => {
     const bindings = Array.from({ length: 5 }, (_, i) => makeClusterBinding(`sa${i}`, 'some-role', 'default'));
     const { violations } = analyzeResources2(bindings);
+    expect(hasViolation(violations, 'RB5003')).toBe(false);
+  });
+
+  it('does not fire when all 15 ClusterRoleBindings start with system:', () => {
+    const bindings = Array.from({ length: 15 }, (_, i) => makeClusterBinding(`sa${i}`, `system:role${i}`, 'default'));
+    // Override binding names to also start with system:
+    const systemBindings = bindings.map((b, i) => ({ ...b, metadata: { ...b.metadata, name: `system:binding${i}` } }));
+    const { violations } = analyzeResources2(systemBindings);
     expect(hasViolation(violations, 'RB5003')).toBe(false);
   });
 });

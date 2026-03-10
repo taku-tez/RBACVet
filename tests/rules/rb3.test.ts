@@ -128,10 +128,54 @@ describe('RB3008 - persistentvolumes', () => {
     expect(hasViolation(violations, 'RB3008')).toBe(true);
   });
 
-  it('does not flag persistentvolumeclaims (different resource)', () => {
+  it('flags persistentvolumeclaims (now included)', () => {
     const { violations } = analyzeResources2([
       makeRole('pvc-reader', [{ apiGroups: [''], resources: ['persistentvolumeclaims'], verbs: ['get'] }]),
     ]);
-    expect(hasViolation(violations, 'RB3008')).toBe(false);
+    expect(hasViolation(violations, 'RB3008')).toBe(true);
+  });
+
+  it('flags write access to persistentvolumeclaims', () => {
+    const { violations } = analyzeResources2([
+      makeRole('pvc-writer', [{ apiGroups: [''], resources: ['persistentvolumeclaims'], verbs: ['create', 'delete'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3008')).toBe(true);
+  });
+
+  it('flags write access to volumeattachments', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('va-writer', [{ apiGroups: ['storage.k8s.io'], resources: ['volumeattachments'], verbs: ['create'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3008')).toBe(true);
+  });
+});
+
+describe('RB3009 - secrets via wildcard apiGroup', () => {
+  it('fires for secrets access via wildcard apiGroup', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('wildcard-secret-reader', [{ apiGroups: ['*'], resources: ['secrets'], verbs: ['get'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3009')).toBe(true);
+  });
+
+  it('fires for wildcard resources with wildcard apiGroup', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('wildcard-all', [{ apiGroups: ['*'], resources: ['*'], verbs: ['get'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3009')).toBe(true);
+  });
+
+  it('does not fire for non-secret wildcard apiGroup access', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('wildcard-pods', [{ apiGroups: ['*'], resources: ['pods'], verbs: ['get'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3009')).toBe(false);
+  });
+
+  it('does not fire when apiGroup is specific (not wildcard)', () => {
+    const { violations } = analyzeResources2([
+      makeRole('core-secret-reader', [{ apiGroups: [''], resources: ['secrets'], verbs: ['get'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3009')).toBe(false);
   });
 });
