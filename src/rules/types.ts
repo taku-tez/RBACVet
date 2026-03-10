@@ -1,7 +1,7 @@
 import type { Role, RoleBinding, ServiceAccount, AuthorizationPolicy } from '../parser/types';
 import type { RBACVetConfig } from '../engine/config';
 
-export type Severity = 'error' | 'warning' | 'info';
+export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 
 export interface Violation {
   rule: string;

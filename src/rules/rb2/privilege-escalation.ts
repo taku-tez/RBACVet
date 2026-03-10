@@ -9,7 +9,7 @@ function allRoles(ctx: RuleContext): Role[] {
 
 export const RB2001: Rule = {
   id: 'RB2001',
-  severity: 'error',
+  severity: 'critical',
   description: 'ClusterRoleBinding binds to `cluster-admin`',
   cisId: 'CIS 5.1.1',
   check(ctx: RuleContext): Violation[] {
@@ -20,7 +20,7 @@ export const RB2001: Rule = {
       if (b.roleRef.name === 'cluster-admin') {
         violations.push({
           rule: 'RB2001',
-          severity: 'error',
+          severity: 'critical',
           message: `${bindingLabel(b)} binds to 'cluster-admin' — grants full cluster access`,
           resource: bindingLabel(b),
           file: b.sourceFile,
@@ -34,7 +34,7 @@ export const RB2001: Rule = {
 
 export const RB2002: Rule = {
   id: 'RB2002',
-  severity: 'error',
+  severity: 'critical',
   description: 'Role with `escalate` verb',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -43,7 +43,7 @@ export const RB2002: Rule = {
         if (hasVerb(rule, 'escalate')) {
           violations.push({
             rule: 'RB2002',
-            severity: 'error',
+            severity: 'critical',
             message: `${resourceLabel(role)} grants 'escalate' verb — allows privilege escalation`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -59,7 +59,7 @@ export const RB2002: Rule = {
 
 export const RB2003: Rule = {
   id: 'RB2003',
-  severity: 'error',
+  severity: 'high',
   description: 'Role with `bind` verb',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -68,7 +68,7 @@ export const RB2003: Rule = {
         if (hasVerb(rule, 'bind')) {
           violations.push({
             rule: 'RB2003',
-            severity: 'error',
+            severity: 'high',
             message: `${resourceLabel(role)} grants 'bind' verb — allows binding to higher-privileged roles`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -84,7 +84,7 @@ export const RB2003: Rule = {
 
 export const RB2004: Rule = {
   id: 'RB2004',
-  severity: 'error',
+  severity: 'high',
   description: 'Role can modify Role/ClusterRole (RBAC management)',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -95,7 +95,7 @@ export const RB2004: Rule = {
         if (targetsRoles && hasWrite) {
           violations.push({
             rule: 'RB2004',
-            severity: 'error',
+            severity: 'high',
             message: `${resourceLabel(role)} can modify Role/ClusterRole — allows RBAC manipulation`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -111,7 +111,7 @@ export const RB2004: Rule = {
 
 export const RB2005: Rule = {
   id: 'RB2005',
-  severity: 'error',
+  severity: 'high',
   description: 'Role can modify RoleBinding/ClusterRoleBinding',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -122,7 +122,7 @@ export const RB2005: Rule = {
         if (targetsBindings && hasWrite) {
           violations.push({
             rule: 'RB2005',
-            severity: 'error',
+            severity: 'high',
             message: `${resourceLabel(role)} can modify RoleBinding/ClusterRoleBinding — allows granting arbitrary permissions`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -138,7 +138,7 @@ export const RB2005: Rule = {
 
 export const RB2006: Rule = {
   id: 'RB2006',
-  severity: 'error',
+  severity: 'high',
   description: 'Impersonation permissions (users, groups, serviceaccounts)',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -149,7 +149,7 @@ export const RB2006: Rule = {
         if (targetsImpersonate && hasVerb(rule, 'impersonate')) {
           violations.push({
             rule: 'RB2006',
-            severity: 'error',
+            severity: 'high',
             message: `${resourceLabel(role)} grants impersonation of users/groups/serviceaccounts`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -165,7 +165,7 @@ export const RB2006: Rule = {
 
 export const RB2007: Rule = {
   id: 'RB2007',
-  severity: 'error',
+  severity: 'high',
   description: 'Role grants access to `tokenreviews` or `subjectaccessreviews`',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -175,7 +175,7 @@ export const RB2007: Rule = {
         if (authResources.some(r => hasResource(rule, r))) {
           violations.push({
             rule: 'RB2007',
-            severity: 'error',
+            severity: 'high',
             message: `${resourceLabel(role)} grants access to tokenreviews/subjectaccessreviews — can verify or bypass auth`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -191,7 +191,7 @@ export const RB2007: Rule = {
 
 export const RB2008: Rule = {
   id: 'RB2008',
-  severity: 'warning',
+  severity: 'medium',
   description: 'Role can create/update `ValidatingWebhookConfiguration`',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -203,7 +203,7 @@ export const RB2008: Rule = {
         if (targetsWebhook && hasWrite) {
           violations.push({
             rule: 'RB2008',
-            severity: 'warning',
+            severity: 'medium',
             message: `${resourceLabel(role)} can create/update ValidatingWebhookConfiguration — can intercept API requests`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -219,7 +219,7 @@ export const RB2008: Rule = {
 
 export const RB2009: Rule = {
   id: 'RB2009',
-  severity: 'warning',
+  severity: 'medium',
   description: 'Role can create/update `MutatingWebhookConfiguration`',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -231,7 +231,7 @@ export const RB2009: Rule = {
         if (targetsWebhook && hasWrite) {
           violations.push({
             rule: 'RB2009',
-            severity: 'warning',
+            severity: 'medium',
             message: `${resourceLabel(role)} can create/update MutatingWebhookConfiguration — can modify API requests`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -288,7 +288,7 @@ export function findEscalationChain(
 
 export const RB2010: Rule = {
   id: 'RB2010',
-  severity: 'error',
+  severity: 'high',
   description: 'Detected privilege escalation chain (A → B → cluster-admin)',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -336,7 +336,7 @@ export const RB2010: Rule = {
         }
         violations.push({
           rule: 'RB2010',
-          severity: 'error',
+          severity: 'high',
           message: `ServiceAccount/${ns}/${sa.metadata.name} has privilege escalation path (${escalationType}): ${chain.join(' → ')}`,
           resource: `ServiceAccount/${ns}/${sa.metadata.name}`,
           file: sa.sourceFile,
@@ -350,7 +350,7 @@ export const RB2010: Rule = {
     for (const p of indirectPaths) {
       violations.push({
         rule: 'RB2010',
-        severity: 'error',
+        severity: 'high',
         message: `ServiceAccount '${p.serviceAccount}' can modify RoleBindings — indirect privilege escalation path: ${p.path.join(' → ')}`,
         resource: `ServiceAccount/${p.serviceAccount}`,
         file: '',
@@ -364,7 +364,7 @@ export const RB2010: Rule = {
 
 export const RB2011: Rule = {
   id: 'RB2011',
-  severity: 'warning',
+  severity: 'medium',
   description: 'Role grants write access to ValidatingAdmissionPolicies (Kubernetes 1.26+)',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -379,7 +379,7 @@ export const RB2011: Rule = {
         if (targets && apiOk && hasWrite) {
           violations.push({
             rule: 'RB2011',
-            severity: 'warning',
+            severity: 'medium',
             message: `${resourceLabel(role)} can modify ValidatingAdmissionPolicies — can bypass admission control`,
             resource: resourceLabel(role),
             file: role.sourceFile,

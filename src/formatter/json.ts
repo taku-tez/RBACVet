@@ -6,9 +6,11 @@ export interface JSONOutput {
   violations: Violation[];
   riskScores: ServiceAccountScore[];
   summary: {
-    errors: number;
-    warnings: number;
-    infos: number;
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    info: number;
     filesScanned: number;
     resourcesFound: Record<string, number>;
   };
@@ -29,9 +31,11 @@ export function formatJSON(
     violations,
     riskScores: scores,
     summary: {
-      errors: violations.filter(v => v.severity === 'error').length,
-      warnings: violations.filter(v => v.severity === 'warning').length,
-      infos: violations.filter(v => v.severity === 'info').length,
+      critical: violations.filter(v => v.severity === 'critical').length,
+      high: violations.filter(v => v.severity === 'high').length,
+      medium: violations.filter(v => v.severity === 'medium').length,
+      low: violations.filter(v => v.severity === 'low').length,
+      info: violations.filter(v => v.severity === 'info').length,
       filesScanned,
       resourcesFound,
     },

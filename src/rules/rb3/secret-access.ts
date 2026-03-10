@@ -8,7 +8,7 @@ function allRoles(ctx: RuleContext): Role[] {
 
 export const RB3001: Rule = {
   id: 'RB3001',
-  severity: 'warning',
+  severity: 'high',
   description: 'Role grants read access to `secrets`',
   cisId: 'CIS 5.1.2',
   check(ctx: RuleContext): Violation[] {
@@ -19,7 +19,7 @@ export const RB3001: Rule = {
         if (hasResource(rule, 'secrets') && readVerbs.some(v => hasVerb(rule, v))) {
           violations.push({
             rule: 'RB3001',
-            severity: 'warning',
+            severity: 'high',
             message: `${resourceLabel(role)} grants read access to 'secrets' (if this is a system component, consider using --include-system to suppress)`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -35,7 +35,7 @@ export const RB3001: Rule = {
 
 export const RB3002: Rule = {
   id: 'RB3002',
-  severity: 'error',
+  severity: 'high',
   description: 'Role grants write access to `secrets`',
   cisId: 'CIS 5.1.2',
   check(ctx: RuleContext): Violation[] {
@@ -45,7 +45,7 @@ export const RB3002: Rule = {
         if (hasResource(rule, 'secrets') && WRITE_VERBS.some(v => hasVerb(rule, v))) {
           violations.push({
             rule: 'RB3002',
-            severity: 'error',
+            severity: 'high',
             message: `${resourceLabel(role)} grants write access to 'secrets' — can exfiltrate or tamper with credentials`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -61,7 +61,7 @@ export const RB3002: Rule = {
 
 export const RB3003: Rule = {
   id: 'RB3003',
-  severity: 'warning',
+  severity: 'medium',
   description: 'Role grants access to `configmaps` with write',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -70,7 +70,7 @@ export const RB3003: Rule = {
         if (hasResource(rule, 'configmaps') && WRITE_VERBS.some(v => hasVerb(rule, v))) {
           violations.push({
             rule: 'RB3003',
-            severity: 'warning',
+            severity: 'medium',
             message: `${resourceLabel(role)} grants write access to 'configmaps' — can inject configuration`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -86,7 +86,7 @@ export const RB3003: Rule = {
 
 export const RB3004: Rule = {
   id: 'RB3004',
-  severity: 'error',
+  severity: 'high',
   description: 'Role can `exec` into pods (`pods/exec`)',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -95,7 +95,7 @@ export const RB3004: Rule = {
         if (hasResource(rule, 'pods/exec')) {
           violations.push({
             rule: 'RB3004',
-            severity: 'error',
+            severity: 'high',
             message: `${resourceLabel(role)} can exec into pods — allows arbitrary command execution`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -111,7 +111,7 @@ export const RB3004: Rule = {
 
 export const RB3005: Rule = {
   id: 'RB3005',
-  severity: 'warning',
+  severity: 'medium',
   description: 'Role can `attach` to pods (`pods/attach`)',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -120,7 +120,7 @@ export const RB3005: Rule = {
         if (hasResource(rule, 'pods/attach')) {
           violations.push({
             rule: 'RB3005',
-            severity: 'warning',
+            severity: 'medium',
             message: `${resourceLabel(role)} can attach to pods — allows interacting with running containers`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -136,7 +136,7 @@ export const RB3005: Rule = {
 
 export const RB3006: Rule = {
   id: 'RB3006',
-  severity: 'warning',
+  severity: 'medium',
   description: 'Role can access pod logs (`pods/log`)',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -145,7 +145,7 @@ export const RB3006: Rule = {
         if (hasResource(rule, 'pods/log')) {
           violations.push({
             rule: 'RB3006',
-            severity: 'warning',
+            severity: 'medium',
             message: `${resourceLabel(role)} can access pod logs — may expose sensitive runtime data`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -161,7 +161,7 @@ export const RB3006: Rule = {
 
 export const RB3007: Rule = {
   id: 'RB3007',
-  severity: 'error',
+  severity: 'critical',
   description: 'Role can access `etcd` directly',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -170,7 +170,7 @@ export const RB3007: Rule = {
         if (hasResource(rule, 'etcd') || hasResource(rule, 'etcdclusters')) {
           violations.push({
             rule: 'RB3007',
-            severity: 'error',
+            severity: 'critical',
             message: `${resourceLabel(role)} can access etcd — grants access to all cluster data`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -186,7 +186,7 @@ export const RB3007: Rule = {
 
 export const RB3008: Rule = {
   id: 'RB3008',
-  severity: 'warning',
+  severity: 'medium',
   description: 'Role grants access to `persistentvolumes`',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -197,7 +197,7 @@ export const RB3008: Rule = {
         if (targetsPV && hasAnyVerb(rule, ['get', 'list', 'create', 'update', 'patch', 'delete'])) {
           violations.push({
             rule: 'RB3008',
-            severity: 'warning',
+            severity: 'medium',
             message: `${resourceLabel(role)} can access persistent storage (PersistentVolumes/PVCs/VolumeAttachments)`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -213,7 +213,7 @@ export const RB3008: Rule = {
 
 export const RB3009: Rule = {
   id: 'RB3009',
-  severity: 'error',
+  severity: 'high',
   description: 'Role accesses secrets via wildcard apiGroup — broad secret exposure',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -226,7 +226,7 @@ export const RB3009: Rule = {
         if (hasAccess) {
           violations.push({
             rule: 'RB3009',
-            severity: 'error',
+            severity: 'high',
             message: `${resourceLabel(role)} accesses secrets via wildcard apiGroup — exposes secrets across all API groups`,
             resource: resourceLabel(role),
             file: role.sourceFile,

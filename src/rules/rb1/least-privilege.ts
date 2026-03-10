@@ -8,7 +8,7 @@ function allRoles(ctx: RuleContext): Role[] {
 
 export const RB1001: Rule = {
   id: 'RB1001',
-  severity: 'error',
+  severity: 'high',
   description: 'Wildcard `*` in verbs',
   cisId: 'CIS 5.1.3',
   check(ctx: RuleContext): Violation[] {
@@ -18,7 +18,7 @@ export const RB1001: Rule = {
         if (hasWildcard(rule.verbs)) {
           violations.push({
             rule: 'RB1001',
-            severity: 'error',
+            severity: 'high',
             message: `${resourceLabel(role)} has wildcard verb '*' — grants all actions`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -34,7 +34,7 @@ export const RB1001: Rule = {
 
 export const RB1002: Rule = {
   id: 'RB1002',
-  severity: 'error',
+  severity: 'critical',
   description: 'Wildcard `*` in resources',
   cisId: 'CIS 5.1.3',
   check(ctx: RuleContext): Violation[] {
@@ -44,7 +44,7 @@ export const RB1002: Rule = {
         if (hasWildcard(rule.resources)) {
           violations.push({
             rule: 'RB1002',
-            severity: 'error',
+            severity: 'critical',
             message: `${resourceLabel(role)} has wildcard resource '*' — grants access to all resources`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -60,7 +60,7 @@ export const RB1002: Rule = {
 
 export const RB1003: Rule = {
   id: 'RB1003',
-  severity: 'warning',
+  severity: 'medium',
   description: 'Wildcard `*` in apiGroups',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -69,7 +69,7 @@ export const RB1003: Rule = {
         if (hasWildcard(rule.apiGroups)) {
           violations.push({
             rule: 'RB1003',
-            severity: 'warning',
+            severity: 'medium',
             message: `${resourceLabel(role)} has wildcard apiGroup '*' — grants access across all API groups`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -85,7 +85,7 @@ export const RB1003: Rule = {
 
 export const RB1004: Rule = {
   id: 'RB1004',
-  severity: 'error',
+  severity: 'high',
   description: '`create` + `delete` combined on same resource',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -98,7 +98,7 @@ export const RB1004: Rule = {
       if (hasCreate && hasDelete) {
         violations.push({
           rule: 'RB1004',
-          severity: 'error',
+          severity: 'high',
           message: `${resourceLabel(role)} combines 'create' and 'delete' on the same resource`,
           resource: resourceLabel(role),
           file: role.sourceFile,
@@ -112,7 +112,7 @@ export const RB1004: Rule = {
 
 export const RB1005: Rule = {
   id: 'RB1005',
-  severity: 'warning',
+  severity: 'medium',
   description: '`update` + `patch` combined with no resource restriction',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -125,7 +125,7 @@ export const RB1005: Rule = {
       if (hasUpdate && hasPatch) {
         violations.push({
           rule: 'RB1005',
-          severity: 'warning',
+          severity: 'medium',
           message: `${resourceLabel(role)} combines 'update' and 'patch' on all resources`,
           resource: resourceLabel(role),
           file: role.sourceFile,
@@ -139,7 +139,7 @@ export const RB1005: Rule = {
 
 export const RB1006: Rule = {
   id: 'RB1006',
-  severity: 'error',
+  severity: 'high',
   description: 'ClusterRole with write access to all core resources',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -151,7 +151,7 @@ export const RB1006: Rule = {
         if (coreGroup && allResources && hasWrite) {
           violations.push({
             rule: 'RB1006',
-            severity: 'error',
+            severity: 'high',
             message: `${resourceLabel(role)} (ClusterRole) grants write access to all core resources`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -217,7 +217,7 @@ export const RB1008: Rule = {
 
 export const RB1009: Rule = {
   id: 'RB1009',
-  severity: 'error',
+  severity: 'high',
   description: 'Role with `*` verbs on `nodes` resource',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -226,7 +226,7 @@ export const RB1009: Rule = {
         if (hasWildcard(rule.verbs) && hasResource(rule, 'nodes')) {
           violations.push({
             rule: 'RB1009',
-            severity: 'error',
+            severity: 'high',
             message: `${resourceLabel(role)} grants all verbs on 'nodes' resource`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -242,7 +242,7 @@ export const RB1009: Rule = {
 
 export const RB1010: Rule = {
   id: 'RB1010',
-  severity: 'error',
+  severity: 'high',
   description: 'Role with `*` verbs on `namespaces` resource',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -251,7 +251,7 @@ export const RB1010: Rule = {
         if (hasWildcard(rule.verbs) && hasResource(rule, 'namespaces')) {
           violations.push({
             rule: 'RB1010',
-            severity: 'error',
+            severity: 'high',
             message: `${resourceLabel(role)} grants all verbs on 'namespaces' resource`,
             resource: resourceLabel(role),
             file: role.sourceFile,
@@ -267,7 +267,7 @@ export const RB1010: Rule = {
 
 export const RB1011: Rule = {
   id: 'RB1011',
-  severity: 'warning',
+  severity: 'medium',
   description: 'Role with `deletecollection` verb',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -276,7 +276,7 @@ export const RB1011: Rule = {
         if (hasVerb(rule, 'deletecollection')) {
           violations.push({
             rule: 'RB1011',
-            severity: 'warning',
+            severity: 'medium',
             message: `${resourceLabel(role)} grants 'deletecollection' verb — allows bulk deletion`,
             resource: resourceLabel(role),
             file: role.sourceFile,

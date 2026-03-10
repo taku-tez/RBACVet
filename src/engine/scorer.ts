@@ -116,8 +116,10 @@ export function computeScores(
       const roleResource = `${role.kind}/${roleNs}${role.metadata.name}`;
       const roleViolations = violations.filter(v => v.resource === roleResource);
       for (const v of roleViolations) {
-        if (v.severity === 'error') score += 15;
-        else if (v.severity === 'warning') score += 5;
+        if (v.severity === 'critical') score += 25;
+        else if (v.severity === 'high') score += 15;
+        else if (v.severity === 'medium') score += 5;
+        else if (v.severity === 'low') score += 2;
         reasons.push(`[via ${roleResource}] ${v.rule}: ${v.message}`);
       }
     }

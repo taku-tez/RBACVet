@@ -3,7 +3,7 @@ import { bindingLabel } from '../utils';
 
 export const RB6001: Rule = {
   id: 'RB6001',
-  severity: 'warning',
+  severity: 'medium',
   description: 'RoleBinding subjects a ServiceAccount from a different namespace',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -15,7 +15,7 @@ export const RB6001: Rule = {
           if (subject.namespace !== bindingNs) {
             violations.push({
               rule: 'RB6001',
-              severity: 'warning',
+              severity: 'medium',
               message: `${bindingLabel(b)} in namespace '${bindingNs}' subjects ServiceAccount '${subject.name}' from namespace '${subject.namespace}'`,
               resource: bindingLabel(b),
               file: b.sourceFile,
@@ -46,7 +46,7 @@ const K8S_BOOTSTRAP_MASTERS_BINDINGS = new Set([
 
 export const RB6002: Rule = {
   id: 'RB6002',
-  severity: 'error',
+  severity: 'critical',
   description: 'Binding to `system:masters` group (bypasses RBAC, cannot be revoked)',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -56,7 +56,7 @@ export const RB6002: Rule = {
         const isBootstrap = K8S_BOOTSTRAP_MASTERS_BINDINGS.has(b.metadata.name);
         violations.push({
           rule: 'RB6002',
-          severity: isBootstrap ? 'info' : 'error',
+          severity: isBootstrap ? 'info' : 'critical',
           message: isBootstrap
             ? `${bindingLabel(b)} binds to 'system:masters' — Kubernetes bootstrap default (hardcoded in API server, cannot be removed)`
             : `${bindingLabel(b)} binds to 'system:masters' — this group bypasses RBAC entirely and cannot be revoked at runtime`,
@@ -72,7 +72,7 @@ export const RB6002: Rule = {
 
 export const RB6003: Rule = {
   id: 'RB6003',
-  severity: 'warning',
+  severity: 'medium',
   description: 'Role grants write access to `networkpolicies` (can break network isolation)',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -86,7 +86,7 @@ export const RB6003: Rule = {
         if (targetsNetpol && hasWrite) {
           violations.push({
             rule: 'RB6003',
-            severity: 'warning',
+            severity: 'medium',
             message: `${role.kind}/${role.metadata.namespace ? role.metadata.namespace + '/' : ''}${role.metadata.name} can modify NetworkPolicies — can break pod network isolation`,
             resource: `${role.kind}/${role.metadata.namespace ? role.metadata.namespace + '/' : ''}${role.metadata.name}`,
             file: role.sourceFile,

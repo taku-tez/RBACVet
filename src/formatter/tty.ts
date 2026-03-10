@@ -3,8 +3,10 @@ import type { Violation, Rule } from '../rules/types';
 import type { ServiceAccountScore } from '../engine/scorer';
 
 const SEVERITY_COLOR = {
-  error: chalk.red,
-  warning: chalk.yellow,
+  critical: chalk.bgRed.white.bold,
+  high: chalk.red.bold,
+  medium: chalk.yellow,
+  low: chalk.green,
   info: chalk.cyan,
 };
 
@@ -69,13 +71,17 @@ export function formatTTY(
   }
 
   // Summary
-  const errors = violations.filter(v => v.severity === 'error').length;
-  const warnings = violations.filter(v => v.severity === 'warning').length;
+  const criticals = violations.filter(v => v.severity === 'critical').length;
+  const highs = violations.filter(v => v.severity === 'high').length;
+  const mediums = violations.filter(v => v.severity === 'medium').length;
+  const lows = violations.filter(v => v.severity === 'low').length;
   const infos = violations.filter(v => v.severity === 'info').length;
 
   const parts: string[] = [];
-  if (errors > 0) parts.push(chalk.red(`${errors} error${errors !== 1 ? 's' : ''}`));
-  if (warnings > 0) parts.push(chalk.yellow(`${warnings} warning${warnings !== 1 ? 's' : ''}`));
+  if (criticals > 0) parts.push(chalk.bgRed.white.bold(`${criticals} critical`));
+  if (highs > 0) parts.push(chalk.red.bold(`${highs} high`));
+  if (mediums > 0) parts.push(chalk.yellow(`${mediums} medium`));
+  if (lows > 0) parts.push(chalk.green(`${lows} low`));
   if (infos > 0) parts.push(chalk.cyan(`${infos} info`));
 
   if (parts.length === 0) {

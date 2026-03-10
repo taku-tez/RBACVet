@@ -14,7 +14,7 @@ const SAFE_UNAUTHENTICATED_ROLES = new Set([
 
 export const RB5001: Rule = {
   id: 'RB5001',
-  severity: 'error',
+  severity: 'critical',
   description: 'RoleBinding to `system:unauthenticated`',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -31,7 +31,7 @@ export const RB5001: Rule = {
 
       violations.push({
         rule: 'RB5001',
-        severity: 'error',
+        severity: 'critical',
         message: `${bindingLabel(b)} binds to 'system:unauthenticated' — grants access to anonymous users`,
         resource: bindingLabel(b),
         file: b.sourceFile,
@@ -44,7 +44,7 @@ export const RB5001: Rule = {
 
 export const RB5002: Rule = {
   id: 'RB5002',
-  severity: 'error',
+  severity: 'critical',
   description: 'RoleBinding to `system:anonymous`',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -56,7 +56,7 @@ export const RB5002: Rule = {
       if (hasAnon) {
         violations.push({
           rule: 'RB5002',
-          severity: 'error',
+          severity: 'critical',
           message: `${bindingLabel(b)} binds to 'system:anonymous' — grants access to unauthenticated users`,
           resource: bindingLabel(b),
           file: b.sourceFile,
@@ -70,7 +70,7 @@ export const RB5002: Rule = {
 
 export const RB5003: Rule = {
   id: 'RB5003',
-  severity: 'warning',
+  severity: 'medium',
   description: 'ClusterRoleBinding count exceeds threshold',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -82,7 +82,7 @@ export const RB5003: Rule = {
     if (count > threshold) {
       violations.push({
         rule: 'RB5003',
-        severity: 'warning',
+        severity: 'medium',
         message: `Found ${count} user-defined ClusterRoleBindings (threshold: ${threshold}) — review cluster-wide permission grants`,
         resource: 'ClusterRoleBinding/*',
         file: userBindings[0]?.sourceFile || '',
@@ -95,7 +95,7 @@ export const RB5003: Rule = {
 
 export const RB5004: Rule = {
   id: 'RB5004',
-  severity: 'warning',
+  severity: 'medium',
   description: 'Multiple ClusterRoles with overlapping permissions',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -128,7 +128,7 @@ export const RB5004: Rule = {
           reported.add(key);
           violations.push({
             rule: 'RB5004',
-            severity: 'warning',
+            severity: 'medium',
             message: `ClusterRole/${a.metadata.name} and ClusterRole/${b.metadata.name} have ${Math.round(overlapRatio * 100)}% overlapping permissions — consider consolidating`,
             resource: `ClusterRole/${a.metadata.name}`,
             file: a.sourceFile,
@@ -240,7 +240,7 @@ export const RB5006: Rule = {
 
 export const RB5007: Rule = {
   id: 'RB5007',
-  severity: 'warning',
+  severity: 'medium',
   description: 'RoleBinding to `system:authenticated` group (all authenticated users)',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -249,7 +249,7 @@ export const RB5007: Rule = {
       if (b.subjects.some(s => s.kind === 'Group' && s.name === 'system:authenticated')) {
         violations.push({
           rule: 'RB5007',
-          severity: 'warning',
+          severity: 'medium',
           message: `${bindingLabel(b)} binds to 'system:authenticated' — grants permissions to ALL authenticated users in the cluster`,
           resource: bindingLabel(b),
           file: b.sourceFile,

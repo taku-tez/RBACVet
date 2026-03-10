@@ -7,9 +7,11 @@ export interface WebhookPayload {
   version: string;
   timestamp: string;
   summary: {
-    errors: number;
-    warnings: number;
-    infos: number;
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    info: number;
     exempted: number;
     maxRiskScore: number;
     maxRiskLevel: RiskLevel;
@@ -54,7 +56,7 @@ function toSlackBlocks(payload: WebhookPayload): object {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `*${summary.errors} errors*, ${summary.warnings} warnings, ${summary.infos} info\nMax risk: *${summary.maxRiskScore}/100* (${summary.maxRiskLevel})${summary.exempted > 0 ? `\n${summary.exempted} exempted` : ''}`,
+          text: `*${summary.critical} critical*, ${summary.high} high, ${summary.medium} medium, ${summary.low} low\nMax risk: *${summary.maxRiskScore}/100* (${summary.maxRiskLevel})${summary.exempted > 0 ? `\n${summary.exempted} exempted` : ''}`,
         },
       },
       ...(violationText ? [{
@@ -94,15 +96,17 @@ export function buildWebhookPayload(
   filesScanned: number,
   version = '0.5.0',
 ): WebhookPayload {
-  const errors = violations.filter(v => v.severity === 'error').length;
-  const warnings = violations.filter(v => v.severity === 'warning').length;
-  const infos = violations.filter(v => v.severity === 'info').length;
+  const critical = violations.filter(v => v.severity === 'critical').length;
+  const high = violations.filter(v => v.severity === 'high').length;
+  const medium = violations.filter(v => v.severity === 'medium').length;
+  const low = violations.filter(v => v.severity === 'low').length;
+  const info = violations.filter(v => v.severity === 'info').length;
   const maxScore = scores.length > 0 ? scores[0].score : 0;
   const maxLevel: RiskLevel = maxScore >= 80 ? 'CRITICAL' : maxScore >= 60 ? 'HIGH' : maxScore >= 30 ? 'MEDIUM' : 'LOW';
 
   const topViolations = violations
     .sort((a, b) => {
-      const order = { error: 2, warning: 1, info: 0 };
+      const order = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
       return (order[b.severity] ?? 0) - (order[a.severity] ?? 0);
     })
     .slice(0, 5)
@@ -120,9 +124,11 @@ export function buildWebhookPayload(
     version,
     timestamp: new Date().toISOString(),
     summary: {
-      errors,
-      warnings,
-      infos,
+      critical,
+      high,
+      medium,
+      low,
+      info,
       exempted: filterResult.exempted.length,
       maxRiskScore: maxScore,
       maxRiskLevel: maxLevel,

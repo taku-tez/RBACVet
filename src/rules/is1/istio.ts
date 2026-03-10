@@ -8,7 +8,7 @@ function policyLabel(p: AuthorizationPolicy): string {
 
 export const IS1001: Rule = {
   id: 'IS1001',
-  severity: 'error',
+  severity: 'high',
   description: 'AuthorizationPolicy ALLOW with no rules (allows all traffic)',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -17,7 +17,7 @@ export const IS1001: Rule = {
       if (action === 'ALLOW' && (!policy.spec.rules || policy.spec.rules.length === 0)) {
         violations.push({
           rule: 'IS1001',
-          severity: 'error',
+          severity: 'high',
           message: `${policyLabel(policy)} has action ALLOW with no rules — allows all traffic to matched workloads`,
           resource: policyLabel(policy),
           file: policy.sourceFile,
@@ -31,7 +31,7 @@ export const IS1001: Rule = {
 
 export const IS1002: Rule = {
   id: 'IS1002',
-  severity: 'warning',
+  severity: 'medium',
   description: 'Wildcard principal in AuthorizationPolicy (allows any identity)',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -44,7 +44,7 @@ export const IS1002: Rule = {
           if (from.source.principals?.includes('*')) {
             violations.push({
               rule: 'IS1002',
-              severity: 'warning',
+              severity: 'medium',
               message: `${policyLabel(policy)} has wildcard principal '*' — allows any authenticated identity`,
               resource: policyLabel(policy),
               file: policy.sourceFile,
@@ -60,7 +60,7 @@ export const IS1002: Rule = {
 
 export const IS1003: Rule = {
   id: 'IS1003',
-  severity: 'warning',
+  severity: 'medium',
   description: 'Wildcard HTTP method in AuthorizationPolicy',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -70,7 +70,7 @@ export const IS1003: Rule = {
           if (to.operation.methods?.includes('*')) {
             violations.push({
               rule: 'IS1003',
-              severity: 'warning',
+              severity: 'medium',
               message: `${policyLabel(policy)} allows wildcard HTTP method '*' — consider restricting to specific methods`,
               resource: policyLabel(policy),
               file: policy.sourceFile,

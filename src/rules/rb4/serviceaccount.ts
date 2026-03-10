@@ -32,7 +32,7 @@ export const RB4001: Rule = {
 
 export const RB4002: Rule = {
   id: 'RB4002',
-  severity: 'warning',
+  severity: 'low',
   description: 'ServiceAccount name is `default` used in RoleBinding',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -42,7 +42,7 @@ export const RB4002: Rule = {
       if (hasDefaultSA) {
         violations.push({
           rule: 'RB4002',
-          severity: 'warning',
+          severity: 'low',
           message: `${bindingLabel(b)} binds to the 'default' ServiceAccount — use a dedicated ServiceAccount`,
           resource: bindingLabel(b),
           file: b.sourceFile,
@@ -56,7 +56,7 @@ export const RB4002: Rule = {
 
 export const RB4003: Rule = {
   id: 'RB4003',
-  severity: 'error',
+  severity: 'high',
   description: 'ServiceAccount bound to ClusterRole with broad permissions',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -73,7 +73,7 @@ export const RB4003: Rule = {
       if (isBroad) {
         violations.push({
           rule: 'RB4003',
-          severity: 'error',
+          severity: 'high',
           message: `${bindingLabel(b)} binds ServiceAccount to ClusterRole '${b.roleRef.name}' with broad permissions`,
           resource: bindingLabel(b),
           file: b.sourceFile,
@@ -87,7 +87,7 @@ export const RB4003: Rule = {
 
 export const RB4004: Rule = {
   id: 'RB4004',
-  severity: 'warning',
+  severity: 'low',
   description: 'ServiceAccount without namespace scope',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -95,7 +95,7 @@ export const RB4004: Rule = {
       if (!sa.metadata.namespace) {
         violations.push({
           rule: 'RB4004',
-          severity: 'warning',
+          severity: 'low',
           message: `ServiceAccount/${sa.metadata.name} has no namespace defined — may be applied to unintended namespace`,
           resource: `ServiceAccount/${sa.metadata.name}`,
           file: sa.sourceFile,
@@ -140,7 +140,7 @@ export const RB4005: Rule = {
 
 export const RB4006: Rule = {
   id: 'RB4006',
-  severity: 'warning',
+  severity: 'low',
   description: 'RoleBinding in multiple namespaces for same SA',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -167,7 +167,7 @@ export const RB4006: Rule = {
         const loc = saBindingFiles.get(saKey)!;
         violations.push({
           rule: 'RB4006',
-          severity: 'warning',
+          severity: 'low',
           message: `ServiceAccount '${saKey}' is bound via RoleBindings in ${namespaces.size} different namespaces: ${[...namespaces].join(', ')}`,
           resource: `ServiceAccount/${saKey}`,
           file: loc.file,
@@ -205,7 +205,7 @@ export const RB4007: Rule = {
 
 export const RB4008: Rule = {
   id: 'RB4008',
-  severity: 'warning',
+  severity: 'low',
   description: 'ServiceAccount token projected without expiry',
   check(ctx: RuleContext): Violation[] {
     // This rule would normally inspect Pod specs for projected service account tokens
@@ -219,7 +219,7 @@ export const RB4008: Rule = {
         if (!hasExpiryHint) {
           violations.push({
             rule: 'RB4008',
-            severity: 'warning',
+            severity: 'low',
             message: `${saLabel(sa)} explicitly enables token auto-mounting without expiry annotation`,
             resource: saLabel(sa),
             file: sa.sourceFile,
@@ -234,7 +234,7 @@ export const RB4008: Rule = {
 
 export const RB4009: Rule = {
   id: 'RB4009',
-  severity: 'warning',
+  severity: 'low',
   description: 'ServiceAccount can create pods — potential token theft via pod spec',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
@@ -260,7 +260,7 @@ export const RB4009: Rule = {
             : `ServiceAccount/${subject.name}`;
           violations.push({
             rule: 'RB4009',
-            severity: 'warning',
+            severity: 'low',
             message: `${saName} can create pods — attacker can mount arbitrary SA tokens via pod spec`,
             resource: saName,
             file: binding.sourceFile,

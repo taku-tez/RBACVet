@@ -2,8 +2,10 @@ import type { Violation } from '../rules/types';
 import { RULE_MAP } from '../rules/index';
 
 const SEVERITY_MAP: Record<string, string> = {
-  error: 'error',
-  warning: 'warning',
+  critical: 'error',
+  high: 'error',
+  medium: 'warning',
+  low: 'note',
   info: 'note',
 };
 

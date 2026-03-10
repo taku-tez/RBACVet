@@ -12,8 +12,10 @@ export interface HTMLReportOptions {
 }
 
 const SEVERITY_COLOR: Record<string, string> = {
-  error: '#dc2626',
-  warning: '#d97706',
+  critical: '#7f1d1d',
+  high: '#dc2626',
+  medium: '#d97706',
+  low: '#16a34a',
   info: '#2563eb',
 };
 
@@ -120,8 +122,10 @@ export function formatHTML(
 ): string {
   const now = opts.generatedAt ?? new Date();
   const title = opts.title ?? 'RBACVet Security Report';
-  const errors = violations.filter(v => v.severity === 'error').length;
-  const warnings = violations.filter(v => v.severity === 'warning').length;
+  const criticals = violations.filter(v => v.severity === 'critical').length;
+  const highs = violations.filter(v => v.severity === 'high').length;
+  const mediums = violations.filter(v => v.severity === 'medium').length;
+  const lows = violations.filter(v => v.severity === 'low').length;
   const infos = violations.filter(v => v.severity === 'info').length;
   const exempted = opts.filterResult?.exempted.length ?? 0;
 
@@ -133,7 +137,7 @@ export function formatHTML(
     </div>`
   ).join('\n');
 
-  const summaryColor = errors > 0 ? '#dc2626' : warnings > 0 ? '#d97706' : '#16a34a';
+  const summaryColor = criticals > 0 ? '#7f1d1d' : highs > 0 ? '#dc2626' : mediums > 0 ? '#d97706' : lows > 0 ? '#16a34a' : '#16a34a';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -174,12 +178,20 @@ export function formatHTML(
   <div class="container">
     <div class="stats">
       <div class="stat-card">
-        <div class="stat-number" style="color:${summaryColor}">${errors}</div>
-        <div class="stat-label">Errors</div>
+        <div class="stat-number" style="color:${summaryColor}">${criticals}</div>
+        <div class="stat-label">Critical</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number" style="color:#d97706">${warnings}</div>
-        <div class="stat-label">Warnings</div>
+        <div class="stat-number" style="color:#dc2626">${highs}</div>
+        <div class="stat-label">High</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" style="color:#d97706">${mediums}</div>
+        <div class="stat-label">Medium</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" style="color:#16a34a">${lows}</div>
+        <div class="stat-label">Low</div>
       </div>
       <div class="stat-card">
         <div class="stat-number" style="color:#2563eb">${infos}</div>

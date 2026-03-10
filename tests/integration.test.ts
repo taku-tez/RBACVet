@@ -23,7 +23,7 @@ describe('Integration: clean fixtures', () => {
   it('produces no errors on clean role fixture', () => {
     const files = [path.join(CLEAN_DIR, 'minimal-role.yaml')];
     const result = analyzeFiles(files, DEFAULT_CONFIG);
-    const errors = result.violations.filter(v => v.severity === 'error');
+    const errors = result.violations.filter(v => v.severity === 'critical' || v.severity === 'high');
     expect(errors).toHaveLength(0);
   });
 
@@ -60,15 +60,15 @@ describe('Integration: ignore config', () => {
 });
 
 describe('Integration: severity override', () => {
-  it('overrides RB3001 severity to error', () => {
+  it('overrides RB3001 severity to critical', () => {
     const files = [path.join(CLEAN_DIR, 'minimal-role.yaml')];
     const config: RBACVetConfig = {
       ...DEFAULT_CONFIG,
-      override: { RB3001: { severity: 'error' } },
+      override: { RB3001: { severity: 'critical' } },
     };
     const result = analyzeFiles(files, config);
     const rb3001 = result.violations.filter(v => v.rule === 'RB3001');
-    rb3001.forEach(v => expect(v.severity).toBe('error'));
+    rb3001.forEach(v => expect(v.severity).toBe('critical'));
   });
 });
 
@@ -91,7 +91,7 @@ describe('Integration: JSON formatter', () => {
     const resources = [...result.graph.roles.values()];
     const json = formatJSON(result.violations, result.scores, files.length, resources);
     const parsed = JSON.parse(json);
-    expect(parsed.summary.errors).toBeGreaterThan(0);
+    expect(parsed.summary.critical + parsed.summary.high).toBeGreaterThan(0);
   });
 });
 
@@ -134,8 +134,8 @@ describe('Integration: TTY formatter', () => {
   it('shows "No violations found" for clean files', () => {
     const files = [path.join(CLEAN_DIR, 'minimal-role.yaml')];
     const result = analyzeFiles(files, DEFAULT_CONFIG);
-    // Filter to errors only
-    const errorOnly = result.violations.filter(v => v.severity === 'error');
+    // Filter to critical/high only
+    const errorOnly = result.violations.filter(v => v.severity === 'critical' || v.severity === 'high');
     const tty = formatTTY(errorOnly, [], false);
     expect(tty).toContain('No violations found');
   });

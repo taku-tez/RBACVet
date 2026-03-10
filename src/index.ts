@@ -58,7 +58,7 @@ Fix Suggestions:
 
 Output:
   --format <tty|json|sarif|html>  Output format (default: tty)
-  --severity <level>        Minimum severity: error, warning, info (default: info)
+  --severity <level>        Minimum severity: critical, high, medium, low, info (default: info)
   --no-color                Disable colored output
 
 Policy & Notifications:
@@ -165,7 +165,7 @@ function filterBySeverity(
   violations: ReturnType<typeof analyzeFiles>['violations'],
   minSeverity: Severity,
 ) {
-  const order: Record<Severity, number> = { error: 2, warning: 1, info: 0 };
+  const order: Record<Severity, number> = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
   const min = order[minSeverity] ?? 0;
   return violations.filter(v => (order[v.severity] ?? 0) >= min);
 }
@@ -335,8 +335,8 @@ async function runScan(
     }
   }
 
-  const hasErrors = violations.some(v => v.severity === 'error');
-  const hasWarnings = violations.some(v => v.severity === 'warning');
+  const hasErrors = violations.some(v => v.severity === 'critical' || v.severity === 'high');
+  const hasWarnings = violations.some(v => v.severity === 'medium' || v.severity === 'low');
   const thresholdExceeded = resources.scores.some(s => s.score >= config.riskScoreThreshold);
 
   return { hasErrors, hasWarnings, thresholdExceeded };

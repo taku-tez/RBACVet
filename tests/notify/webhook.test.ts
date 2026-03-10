@@ -4,7 +4,7 @@ import type { Violation } from '../../src/rules/types';
 import type { ServiceAccountScore } from '../../src/engine/scorer';
 import type { FilterResult } from '../../src/policy/types';
 
-function makeViolation(rule: string, severity: Violation['severity'] = 'error'): Violation {
+function makeViolation(rule: string, severity: Violation['severity'] = 'high'): Violation {
   return { rule, severity, message: 'test', resource: 'ClusterRole/foo', file: 'test.yaml', line: 1 };
 }
 
@@ -17,15 +17,16 @@ const emptyFilter: FilterResult = { remaining: [], exempted: [], expiredExemptio
 describe('buildWebhookPayload', () => {
   it('counts errors, warnings, infos correctly', () => {
     const violations = [
-      makeViolation('RB1001', 'error'),
-      makeViolation('RB1002', 'error'),
-      makeViolation('RB3001', 'warning'),
+      makeViolation('RB1001', 'critical'),
+      makeViolation('RB1002', 'high'),
+      makeViolation('RB3001', 'medium'),
       makeViolation('RB4001', 'info'),
     ];
     const payload = buildWebhookPayload(violations, [], emptyFilter, 5);
-    expect(payload.summary.errors).toBe(2);
-    expect(payload.summary.warnings).toBe(1);
-    expect(payload.summary.infos).toBe(1);
+    expect(payload.summary.critical).toBe(1);
+    expect(payload.summary.high).toBe(1);
+    expect(payload.summary.medium).toBe(1);
+    expect(payload.summary.info).toBe(1);
     expect(payload.summary.filesScanned).toBe(5);
   });
 
@@ -56,14 +57,14 @@ describe('buildWebhookPayload', () => {
     const violations = [
       makeViolation('RB5001', 'info'),
       makeViolation('RB5002', 'info'),
-      makeViolation('RB1001', 'error'),
-      makeViolation('RB1002', 'error'),
-      makeViolation('RB3001', 'warning'),
-      makeViolation('RB3002', 'warning'),
+      makeViolation('RB1001', 'critical'),
+      makeViolation('RB1002', 'high'),
+      makeViolation('RB3001', 'medium'),
+      makeViolation('RB3002', 'low'),
     ];
     const payload = buildWebhookPayload(violations, [], emptyFilter, 0);
     expect(payload.topViolations).toHaveLength(5);
-    expect(payload.topViolations[0].severity).toBe('error');
+    expect(payload.topViolations[0].severity).toBe('critical');
   });
 
   it('topRiskyAccounts capped at 3', () => {
