@@ -179,3 +179,117 @@ describe('RB3009 - secrets via wildcard apiGroup', () => {
     expect(hasViolation(violations, 'RB3009')).toBe(false);
   });
 });
+
+describe('RB3011 - nodes/proxy access', () => {
+  it('flags get on nodes/proxy', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('node-proxy-reader', [{ apiGroups: [''], resources: ['nodes/proxy'], verbs: ['get'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3011')).toBe(true);
+  });
+
+  it('flags create on nodes/proxy', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('node-proxy-creator', [{ apiGroups: [''], resources: ['nodes/proxy'], verbs: ['create'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3011')).toBe(true);
+  });
+
+  it('flags wildcard verb on nodes/proxy', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('node-proxy-all', [{ apiGroups: [''], resources: ['nodes/proxy'], verbs: ['*'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3011')).toBe(true);
+  });
+
+  it('does not flag access to nodes (non-proxy subresource)', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('node-reader', [{ apiGroups: [''], resources: ['nodes'], verbs: ['get', 'list'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3011')).toBe(false);
+  });
+
+  it('violation message mentions kubelet API', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('node-proxy-reader', [{ apiGroups: [''], resources: ['nodes/proxy'], verbs: ['get'] }]),
+    ]);
+    const v = violations.find(v => v.rule === 'RB3011');
+    expect(v?.message).toContain('kubelet');
+  });
+});
+
+describe('RB3012 - pods/proxy and services/proxy access', () => {
+  it('flags get on pods/proxy', () => {
+    const { violations } = analyzeResources2([
+      makeRole('pod-proxy', [{ apiGroups: [''], resources: ['pods/proxy'], verbs: ['get'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3012')).toBe(true);
+  });
+
+  it('flags get on services/proxy', () => {
+    const { violations } = analyzeResources2([
+      makeRole('svc-proxy', [{ apiGroups: [''], resources: ['services/proxy'], verbs: ['get'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3012')).toBe(true);
+  });
+
+  it('flags wildcard resource including proxy subresources', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('wildcard-resources', [{ apiGroups: [''], resources: ['*'], verbs: ['get'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3012')).toBe(true);
+  });
+
+  it('does not flag access to pods without proxy subresource', () => {
+    const { violations } = analyzeResources2([
+      makeRole('pod-reader', [{ apiGroups: [''], resources: ['pods'], verbs: ['get', 'list'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3012')).toBe(false);
+  });
+
+  it('violation message mentions NetworkPolicies', () => {
+    const { violations } = analyzeResources2([
+      makeRole('pod-proxy', [{ apiGroups: [''], resources: ['pods/proxy'], verbs: ['get'] }]),
+    ]);
+    const v = violations.find(v => v.rule === 'RB3012');
+    expect(v?.message).toContain('NetworkPolicies');
+  });
+});
+
+describe('RB3010 - pods/portforward access', () => {
+  it('flags create on pods/portforward', () => {
+    const { violations } = analyzeResources2([
+      makeRole('port-forwarder', [{ apiGroups: [''], resources: ['pods/portforward'], verbs: ['create'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3010')).toBe(true);
+  });
+
+  it('flags wildcard verb on pods/portforward', () => {
+    const { violations } = analyzeResources2([
+      makeRole('port-forwarder-all', [{ apiGroups: [''], resources: ['pods/portforward'], verbs: ['*'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3010')).toBe(true);
+  });
+
+  it('does not flag roles without portforward', () => {
+    const { violations } = analyzeResources2([
+      makeRole('pod-reader', [{ apiGroups: [''], resources: ['pods'], verbs: ['get', 'list'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3010')).toBe(false);
+  });
+
+  it('does not flag get on pods/portforward (portforward requires create)', () => {
+    const { violations } = analyzeResources2([
+      makeRole('portforward-getter', [{ apiGroups: [''], resources: ['pods/portforward'], verbs: ['get'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB3010')).toBe(false);
+  });
+
+  it('violation message mentions NetworkPolicy bypass', () => {
+    const { violations } = analyzeResources2([
+      makeRole('port-forwarder', [{ apiGroups: [''], resources: ['pods/portforward'], verbs: ['create'] }]),
+    ]);
+    const v = violations.find(v => v.rule === 'RB3010');
+    expect(v?.message).toContain('NetworkPolicies');
+  });
+});

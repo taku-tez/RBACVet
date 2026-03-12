@@ -129,3 +129,94 @@ describe('RB5006 - orphaned RoleBinding', () => {
     expect(hasViolation(violations, 'RB5006')).toBe(false);
   });
 });
+
+describe('RB5008 - leases write access', () => {
+  it('flags create on leases with coordination.k8s.io apiGroup', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('lease-creator', [{
+        apiGroups: ['coordination.k8s.io'],
+        resources: ['leases'],
+        verbs: ['create'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB5008')).toBe(true);
+  });
+
+  it('flags update on leases', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('lease-updater', [{
+        apiGroups: ['coordination.k8s.io'],
+        resources: ['leases'],
+        verbs: ['update'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB5008')).toBe(true);
+  });
+
+  it('flags delete on leases', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('lease-deleter', [{
+        apiGroups: ['coordination.k8s.io'],
+        resources: ['leases'],
+        verbs: ['delete'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB5008')).toBe(true);
+  });
+
+  it('flags wildcard apiGroup with leases write', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('wildcard-leases', [{
+        apiGroups: ['*'],
+        resources: ['leases'],
+        verbs: ['patch'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB5008')).toBe(true);
+  });
+
+  it('flags wildcard resource with coordination.k8s.io write', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('wildcard-coordination', [{
+        apiGroups: ['coordination.k8s.io'],
+        resources: ['*'],
+        verbs: ['update'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB5008')).toBe(true);
+  });
+
+  it('does not flag read-only access to leases', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('lease-reader', [{
+        apiGroups: ['coordination.k8s.io'],
+        resources: ['leases'],
+        verbs: ['get', 'list', 'watch'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB5008')).toBe(false);
+  });
+
+  it('does not flag leases write with wrong apiGroup', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('wrong-group-leases', [{
+        apiGroups: ['apps'],
+        resources: ['leases'],
+        verbs: ['create'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB5008')).toBe(false);
+  });
+
+  it('violation message mentions leader election', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('lease-creator', [{
+        apiGroups: ['coordination.k8s.io'],
+        resources: ['leases'],
+        verbs: ['create'],
+      }]),
+    ]);
+    const v = violations.find(v => v.rule === 'RB5008');
+    expect(v?.message).toContain('leader election');
+  });
+});

@@ -62,6 +62,7 @@ export const RB1003: Rule = {
   id: 'RB1003',
   severity: 'medium',
   description: 'Wildcard `*` in apiGroups',
+  cisId: 'CIS 5.1.3',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of allRoles(ctx)) {
@@ -87,6 +88,7 @@ export const RB1004: Rule = {
   id: 'RB1004',
   severity: 'high',
   description: '`create` + `delete` combined on same resource',
+  cisId: 'CIS 5.1.3',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of allRoles(ctx)) {
@@ -114,6 +116,7 @@ export const RB1005: Rule = {
   id: 'RB1005',
   severity: 'medium',
   description: '`update` + `patch` combined with no resource restriction',
+  cisId: 'CIS 5.1.3',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of allRoles(ctx)) {
@@ -141,6 +144,7 @@ export const RB1006: Rule = {
   id: 'RB1006',
   severity: 'high',
   description: 'ClusterRole with write access to all core resources',
+  cisId: 'CIS 5.1.3',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of ctx.graph.clusterRoles.values()) {
@@ -219,6 +223,7 @@ export const RB1009: Rule = {
   id: 'RB1009',
   severity: 'high',
   description: 'Role with `*` verbs on `nodes` resource',
+  cisId: 'CIS 5.1.3',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of allRoles(ctx)) {
@@ -244,6 +249,7 @@ export const RB1010: Rule = {
   id: 'RB1010',
   severity: 'high',
   description: 'Role with `*` verbs on `namespaces` resource',
+  cisId: 'CIS 5.1.3',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of allRoles(ctx)) {
@@ -312,6 +318,31 @@ export const RB1012: Rule = {
   },
 };
 
+export const RB1014: Rule = {
+  id: 'RB1014',
+  severity: 'high',
+  description: 'Role grants write access to `pods/ephemeralcontainers` — allows injecting containers into running pods',
+  check(ctx: RuleContext): Violation[] {
+    const violations: Violation[] = [];
+    for (const role of allRoles(ctx)) {
+      for (const rule of role.rules) {
+        if (hasResource(rule, 'pods/ephemeralcontainers') && hasAnyVerb(rule, ['update', 'patch', '*'])) {
+          violations.push({
+            rule: 'RB1014',
+            severity: 'high',
+            message: `${resourceLabel(role)} can update ephemeral containers in pods — allows injecting arbitrary containers into running pods, enabling container escape`,
+            resource: resourceLabel(role),
+            file: role.sourceFile,
+            line: role.sourceLine,
+          });
+          break;
+        }
+      }
+    }
+    return violations;
+  },
+};
+
 export const RB1_WRITE_ONLY: Rule = {
   id: 'RB1013',
   severity: 'info',
@@ -342,5 +373,5 @@ export const RB1_WRITE_ONLY: Rule = {
 
 export const RB1_RULES: Rule[] = [
   RB1001, RB1002, RB1003, RB1004, RB1005, RB1006,
-  RB1007, RB1008, RB1009, RB1010, RB1011, RB1012, RB1_WRITE_ONLY,
+  RB1007, RB1008, RB1009, RB1010, RB1011, RB1012, RB1_WRITE_ONLY, RB1014,
 ];

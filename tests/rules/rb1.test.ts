@@ -283,3 +283,48 @@ describe('RB1012 - more than 20 rules', () => {
     expect(hasViolation(violations, 'RB1012')).toBe(false);
   });
 });
+
+describe('RB1014 - pods/ephemeralcontainers write access', () => {
+  it('flags update on pods/ephemeralcontainers', () => {
+    const { violations } = analyzeResources2([
+      makeRole('ephemeral-updater', [{ apiGroups: [''], resources: ['pods/ephemeralcontainers'], verbs: ['update'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB1014')).toBe(true);
+  });
+
+  it('flags patch on pods/ephemeralcontainers', () => {
+    const { violations } = analyzeResources2([
+      makeRole('ephemeral-patcher', [{ apiGroups: [''], resources: ['pods/ephemeralcontainers'], verbs: ['patch'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB1014')).toBe(true);
+  });
+
+  it('flags wildcard verb on pods/ephemeralcontainers', () => {
+    const { violations } = analyzeResources2([
+      makeRole('ephemeral-all', [{ apiGroups: [''], resources: ['pods/ephemeralcontainers'], verbs: ['*'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB1014')).toBe(true);
+  });
+
+  it('does not flag read-only access to pods/ephemeralcontainers', () => {
+    const { violations } = analyzeResources2([
+      makeRole('ephemeral-reader', [{ apiGroups: [''], resources: ['pods/ephemeralcontainers'], verbs: ['get'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB1014')).toBe(false);
+  });
+
+  it('does not flag roles without ephemeralcontainers', () => {
+    const { violations } = analyzeResources2([
+      makeRole('pod-reader', [{ apiGroups: [''], resources: ['pods'], verbs: ['update'] }]),
+    ]);
+    expect(hasViolation(violations, 'RB1014')).toBe(false);
+  });
+
+  it('violation message mentions container injection', () => {
+    const { violations } = analyzeResources2([
+      makeRole('ephemeral-updater', [{ apiGroups: [''], resources: ['pods/ephemeralcontainers'], verbs: ['update'] }]),
+    ]);
+    const v = violations.find(v => v.rule === 'RB1014');
+    expect(v?.message).toContain('ephemeral containers');
+  });
+});

@@ -48,6 +48,7 @@ export const RB6002: Rule = {
   id: 'RB6002',
   severity: 'critical',
   description: 'Binding to `system:masters` group (bypasses RBAC, cannot be revoked)',
+  cisId: 'CIS 5.1.7',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     const allBindings = [...ctx.graph.roleBindings, ...ctx.graph.clusterRoleBindings];
@@ -74,6 +75,7 @@ export const RB6003: Rule = {
   id: 'RB6003',
   severity: 'medium',
   description: 'Role grants write access to `networkpolicies` (can break network isolation)',
+  cisId: 'CIS 5.3.2',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     const allRoles = [...ctx.graph.roles.values(), ...ctx.graph.clusterRoles.values()];

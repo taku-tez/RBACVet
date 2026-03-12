@@ -88,6 +88,7 @@ export const RB3004: Rule = {
   id: 'RB3004',
   severity: 'high',
   description: 'Role can `exec` into pods (`pods/exec`)',
+  cisId: 'CIS 5.1.2',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of allRoles(ctx)) {
@@ -215,6 +216,7 @@ export const RB3009: Rule = {
   id: 'RB3009',
   severity: 'high',
   description: 'Role accesses secrets via wildcard apiGroup — broad secret exposure',
+  cisId: 'CIS 5.1.2',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of allRoles(ctx)) {
@@ -240,6 +242,85 @@ export const RB3009: Rule = {
   },
 };
 
+export const RB3011: Rule = {
+  id: 'RB3011',
+  severity: 'high',
+  description: 'Role can access `nodes/proxy` — grants full kubelet API access, bypassing pod-level RBAC',
+  cisId: 'CIS 5.1.2',
+  check(ctx: RuleContext): Violation[] {
+    const violations: Violation[] = [];
+    for (const role of allRoles(ctx)) {
+      for (const rule of role.rules) {
+        if (hasResource(rule, 'nodes/proxy') && rule.verbs.length > 0) {
+          violations.push({
+            rule: 'RB3011',
+            severity: 'high',
+            message: `${resourceLabel(role)} can access nodes/proxy — exposes the kubelet API (port 10250), allowing exec/logs on any pod on that node regardless of pod-level RBAC`,
+            resource: resourceLabel(role),
+            file: role.sourceFile,
+            line: role.sourceLine,
+          });
+          break;
+        }
+      }
+    }
+    return violations;
+  },
+};
+
+export const RB3012: Rule = {
+  id: 'RB3012',
+  severity: 'medium',
+  description: 'Role can use `pods/proxy` or `services/proxy` — HTTP proxy bypasses NetworkPolicies',
+  check(ctx: RuleContext): Violation[] {
+    const violations: Violation[] = [];
+    const proxyResources = ['pods/proxy', 'services/proxy'];
+    for (const role of allRoles(ctx)) {
+      for (const rule of role.rules) {
+        const matched = proxyResources.filter(r => hasResource(rule, r));
+        if (matched.length > 0 && rule.verbs.length > 0) {
+          violations.push({
+            rule: 'RB3012',
+            severity: 'medium',
+            message: `${resourceLabel(role)} can use ${matched.join('/')} — allows HTTP proxying to internal services through kube-apiserver, bypassing NetworkPolicies`,
+            resource: resourceLabel(role),
+            file: role.sourceFile,
+            line: role.sourceLine,
+          });
+          break;
+        }
+      }
+    }
+    return violations;
+  },
+};
+
+export const RB3010: Rule = {
+  id: 'RB3010',
+  severity: 'medium',
+  description: 'Role can use `pods/portforward` — allows bypassing network policies',
+  check(ctx: RuleContext): Violation[] {
+    const violations: Violation[] = [];
+    for (const role of allRoles(ctx)) {
+      for (const rule of role.rules) {
+        if (hasResource(rule, 'pods/portforward') && hasVerb(rule, 'create')) {
+          violations.push({
+            rule: 'RB3010',
+            severity: 'medium',
+            message: `${resourceLabel(role)} can use pods/portforward — allows direct access to pod services, bypassing NetworkPolicies`,
+            resource: resourceLabel(role),
+            file: role.sourceFile,
+            line: role.sourceLine,
+          });
+          break;
+        }
+      }
+    }
+    return violations;
+  },
+};
+
 export const RB3_RULES: Rule[] = [
-  RB3001, RB3002, RB3003, RB3004, RB3005, RB3006, RB3007, RB3008, RB3009,
+  RB3001, RB3002, RB3003, RB3004, RB3005, RB3006, RB3007, RB3008, RB3009, RB3010,
+  RB3011, RB3012,
 ];

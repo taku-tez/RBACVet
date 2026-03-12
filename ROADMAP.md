@@ -1,71 +1,60 @@
 # RBACVet Roadmap
 
-## v0.1.0 — Manifest Mode (Week 3)
+## v0.5.0 (current) — Policy & Reporting
 
-**Goal:** Static analysis of RBAC YAML files with risk scoring.
+All features complete. 521 tests, 27 test files, 74 rules.
 
-- [x] YAML parser (reuse ManifestVet parser)
-- [x] Rule engine (RB1–5, 44 rules)
-- [x] Risk scoring engine (0–100 per ServiceAccount)
-- [x] TTY / JSON / SARIF formatters
-- [x] CLI (`--dir`, `--format`, `--ignore`, `--severity`)
-- [x] 131 tests
-- [ ] npm publish
+### Completed milestones
 
----
+- [x] **v0.1.0** — Manifest Mode: static YAML analysis, 44 rules, TTY/JSON/SARIF output
+- [x] **v0.2.0** — Live Cluster Mode: `--cluster`, `--context`, `--namespace`, `--diff`
+- [x] **v0.3.0** — Privilege Escalation Graph: `--map`, DOT/JSON output, cycle detection
+- [x] **v0.4.0** — LLM Fix Suggestions: `--fix`, `--apply-fixes`, rule-based patches for 60+ rules
+- [x] **v0.5.0** — Policy & Reporting: HTML report, exemption policies, scheduled scans, webhook notifications
+- [x] **Post-roadmap** — Severity 5-level (critical/high/medium/low/info), CIS Benchmark IDs, Istio IS1 rules, RB6–RB9 rule categories
 
-## v0.2.0 — Live Cluster Mode (Week 4)
+### Post-roadmap improvements
 
-**Goal:** Analyze RBAC directly from a running cluster.
-
-- [x] `--cluster` flag — use current kubeconfig
-- [x] `--context <name>` — kubeconfig context targeting
-- [x] `--namespace` / `--all-namespaces`
-- [x] Fetch Role, ClusterRole, RoleBinding, ClusterRoleBinding, ServiceAccount via K8s API
-- [x] Cross-namespace binding detection (RB6001)
-- [x] `rbacvet --diff` — compare cluster vs local manifests
-
----
-
-## v0.3.0 — Privilege Escalation Graph (Week 5)
-
-**Goal:** Visualize and detect privilege escalation paths.
-
-- [x] Graph builder: ServiceAccount → Role → effective permissions
-- [x] Reachability analysis: can SA X reach cluster-admin?
-- [x] `--map` flag — output full escalation graph
-- [x] DOT format output (Graphviz visualization)
-- [x] JSON path output for programmatic consumption
-- [x] Cycle detection in RoleBinding chains
+| Item | Status |
+|------|--------|
+| 5-level severity (critical/high/medium/low/info) | Done |
+| CIS Kubernetes Benchmark IDs on 30+ rules | Done |
+| Istio AuthorizationPolicy rules (IS1001–IS1004) | Done |
+| RB6 Cross-namespace & network risks | Done |
+| RB7 Admission & runtime control | Done |
+| RB8 Workload risks (DaemonSet, StatefulSet, HPA, Jobs) | Done |
+| RB9 Node & resource control (nodes/status, resourcequotas, limitranges) | Done |
+| Fix coverage expanded to 61 rules | Done |
+| `--init-ci github/gitlab` scaffolding command | Done |
+| `--list-rules` and `--explain <rule>` commands | Done |
+| RB4003–RB4009 ServiceAccount fixes | Done |
+| RB1004–RB1014 additional least-privilege fixes | Done |
 
 ---
 
-## v0.4.0 — LLM Fix Suggestions (Week 6–7)
+## v0.6.0 — Planned
 
-**Goal:** Generate least-privilege Role replacement suggestions.
+Accuracy and false-positive reduction.
 
-- [x] `--fix` flag — suggest minimal Role with only required permissions
-- [x] `--fix-lang ja` — Japanese explanations
-- [x] LLM-powered Role refactoring (given workload, suggest minimal RBAC)
-- [x] Automated RBAC tightening with `--apply-fixes`
+- [ ] `--baseline` flag: snapshot current violations, only report new ones in CI
+- [ ] Namespace-scoped rule suppression in `.rbacvet.yaml`
+- [ ] `--output-file` flag to write results without redirecting stdout
+- [ ] `rbacvet explain` subcommand with remediation examples
+- [ ] Structured logging (`--log-level debug`) for troubleshooting cluster scans
 
----
+## v0.7.0 — Planned
 
-## v0.5.0 — Policy & Reporting (Week 8)
+Ecosystem integrations.
 
-**Goal:** Enterprise-grade policy enforcement and reporting.
+- [ ] Admission webhook mode: validate RBAC resources on `kubectl apply`
+- [ ] Helm chart values scanner (detect RBAC settings in values.yaml)
+- [ ] ArgoCD / Flux integration: scan before sync
+- [ ] VS Code extension (inline diagnostics)
+- [ ] Pre-commit hook template
 
-- [x] `--format html` — interactive HTML report
-- [x] Per-team RBAC policy files
-- [x] Exemption management with audit trail
-- [x] Periodic cluster scan scheduling
-- [x] Slack / webhook notifications for new violations
+## Ideas backlog
 
----
-
-## Future
-
-- [x] OPA/Rego custom policy integration
-- [x] RBAC comparison across environments (dev vs prod)
-- [x] Service mesh (Istio) authorization policy analysis
-- [x] CIS Kubernetes Benchmark mapping
+- OPA policy output format (generate Rego from violations)
+- Multi-cluster comparison report
+- RBAC audit log correlation (cluster events → which rules fired)
+- `--watch` mode for live cluster drift detection

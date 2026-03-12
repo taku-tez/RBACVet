@@ -131,51 +131,85 @@ describe('RB2007 - tokenreviews/subjectaccessreviews', () => {
   });
 });
 
-describe('RB2008 - ValidatingWebhookConfiguration write', () => {
-  it('flags create on validatingwebhookconfigurations', () => {
-    const { violations } = analyzeResources2([
-      makeClusterRole('webhook-admin', [{
-        apiGroups: ['admissionregistration.k8s.io'],
-        resources: ['validatingwebhookconfigurations'],
-        verbs: ['create'],
-      }]),
-    ]);
-    expect(hasViolation(violations, 'RB2008')).toBe(true);
-  });
+// RB2008 and RB2009 removed — superseded by RB7001 (admission-webhooks.ts)
 
-  it('does not flag get on validatingwebhookconfigurations', () => {
+describe('RB2012 - CertificateSigningRequest approval', () => {
+  it('flags update on certificatesigningrequests/approval', () => {
     const { violations } = analyzeResources2([
-      makeClusterRole('webhook-reader', [{
-        apiGroups: ['admissionregistration.k8s.io'],
-        resources: ['validatingwebhookconfigurations'],
-        verbs: ['get'],
-      }]),
-    ]);
-    expect(hasViolation(violations, 'RB2008')).toBe(false);
-  });
-});
-
-describe('RB2009 - MutatingWebhookConfiguration write', () => {
-  it('flags update on mutatingwebhookconfigurations', () => {
-    const { violations } = analyzeResources2([
-      makeClusterRole('mutating-admin', [{
-        apiGroups: ['admissionregistration.k8s.io'],
-        resources: ['mutatingwebhookconfigurations'],
+      makeClusterRole('csr-approver', [{
+        apiGroups: ['certificates.k8s.io'],
+        resources: ['certificatesigningrequests/approval'],
         verbs: ['update'],
       }]),
     ]);
-    expect(hasViolation(violations, 'RB2009')).toBe(true);
+    expect(hasViolation(violations, 'RB2012')).toBe(true);
   });
 
-  it('does not flag list on mutatingwebhookconfigurations', () => {
+  it('flags patch on certificatesigningrequests/approval', () => {
     const { violations } = analyzeResources2([
-      makeClusterRole('mutating-reader', [{
-        apiGroups: ['admissionregistration.k8s.io'],
-        resources: ['mutatingwebhookconfigurations'],
-        verbs: ['list'],
+      makeClusterRole('csr-patcher', [{
+        apiGroups: ['certificates.k8s.io'],
+        resources: ['certificatesigningrequests/approval'],
+        verbs: ['patch'],
       }]),
     ]);
-    expect(hasViolation(violations, 'RB2009')).toBe(false);
+    expect(hasViolation(violations, 'RB2012')).toBe(true);
+  });
+
+  it('flags approve verb on signers', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('signer', [{
+        apiGroups: ['certificates.k8s.io'],
+        resources: ['signers'],
+        verbs: ['approve'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB2012')).toBe(true);
+  });
+
+  it('flags wildcard apiGroup with csr/approval update', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('wildcard-csr', [{
+        apiGroups: ['*'],
+        resources: ['certificatesigningrequests/approval'],
+        verbs: ['update'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB2012')).toBe(true);
+  });
+
+  it('does not flag read-only access to certificatesigningrequests', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('csr-reader', [{
+        apiGroups: ['certificates.k8s.io'],
+        resources: ['certificatesigningrequests'],
+        verbs: ['get', 'list'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB2012')).toBe(false);
+  });
+
+  it('does not flag update on CSR with wrong apiGroup', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('wrong-group', [{
+        apiGroups: [''],
+        resources: ['certificatesigningrequests/approval'],
+        verbs: ['update'],
+      }]),
+    ]);
+    expect(hasViolation(violations, 'RB2012')).toBe(false);
+  });
+
+  it('violation message mentions cluster-admin identity', () => {
+    const { violations } = analyzeResources2([
+      makeClusterRole('csr-approver', [{
+        apiGroups: ['certificates.k8s.io'],
+        resources: ['certificatesigningrequests/approval'],
+        verbs: ['update'],
+      }]),
+    ]);
+    const v = violations.find(v => v.rule === 'RB2012');
+    expect(v?.message).toContain('cluster-admin');
   });
 });
 

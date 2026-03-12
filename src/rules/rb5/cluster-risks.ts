@@ -16,6 +16,7 @@ export const RB5001: Rule = {
   id: 'RB5001',
   severity: 'critical',
   description: 'RoleBinding to `system:unauthenticated`',
+  cisId: 'CIS 5.1.1',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     const allBindings = [...ctx.graph.roleBindings, ...ctx.graph.clusterRoleBindings];
@@ -46,6 +47,7 @@ export const RB5002: Rule = {
   id: 'RB5002',
   severity: 'critical',
   description: 'RoleBinding to `system:anonymous`',
+  cisId: 'CIS 5.1.1',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     const allBindings = [...ctx.graph.roleBindings, ...ctx.graph.clusterRoleBindings];
@@ -261,6 +263,38 @@ export const RB5007: Rule = {
   },
 };
 
+export const RB5008: Rule = {
+  id: 'RB5008',
+  severity: 'medium',
+  description: 'Role grants write access to `leases` — can disrupt leader election for control plane components',
+  check(ctx: RuleContext): Violation[] {
+    const violations: Violation[] = [];
+    const allRolesList = [...ctx.graph.roles.values(), ...ctx.graph.clusterRoles.values()];
+    const writeVerbs = ['create', 'update', 'patch', 'delete', 'deletecollection'];
+    for (const role of allRolesList) {
+      for (const rule of role.rules) {
+        const coordinationGroup =
+          rule.apiGroups.includes('coordination.k8s.io') || rule.apiGroups.includes('*');
+        const targetsLeases =
+          rule.resources.includes('leases') || rule.resources.includes('*');
+        const hasWrite = writeVerbs.some(v => rule.verbs.includes(v) || rule.verbs.includes('*'));
+        if (coordinationGroup && targetsLeases && hasWrite) {
+          violations.push({
+            rule: 'RB5008',
+            severity: 'medium',
+            message: `${resourceLabel(role)} can write to leases (coordination.k8s.io) — can disrupt leader election for kube-controller-manager, kube-scheduler, or cloud-controller-manager`,
+            resource: resourceLabel(role),
+            file: role.sourceFile,
+            line: role.sourceLine,
+          });
+          break;
+        }
+      }
+    }
+    return violations;
+  },
+};
+
 export const RB5_RULES: Rule[] = [
-  RB5001, RB5002, RB5003, RB5004, RB5005, RB5006, RB5007,
+  RB5001, RB5002, RB5003, RB5004, RB5005, RB5006, RB5007, RB5008,
 ];

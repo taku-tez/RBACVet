@@ -34,6 +34,7 @@ export const RB4002: Rule = {
   id: 'RB4002',
   severity: 'low',
   description: 'ServiceAccount name is `default` used in RoleBinding',
+  cisId: 'CIS 5.1.5',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     const allBindings = [...ctx.graph.roleBindings, ...ctx.graph.clusterRoleBindings];
@@ -58,6 +59,7 @@ export const RB4003: Rule = {
   id: 'RB4003',
   severity: 'high',
   description: 'ServiceAccount bound to ClusterRole with broad permissions',
+  cisId: 'CIS 5.1.5',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const b of ctx.graph.clusterRoleBindings) {
@@ -236,6 +238,7 @@ export const RB4009: Rule = {
   id: 'RB4009',
   severity: 'low',
   description: 'ServiceAccount can create pods — potential token theft via pod spec',
+  cisId: 'CIS 5.1.4',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     const allBindings = [...ctx.graph.roleBindings, ...ctx.graph.clusterRoleBindings];

@@ -1,5 +1,5 @@
 import type { Rule, RuleContext, Violation, ResourceGraph } from '../types';
-import { hasVerb, hasResource, resourceLabel, bindingLabel, makeRoleKey, isClusterAdminEquivalent, WRITE_VERBS } from '../utils';
+import { hasVerb, hasAnyVerb, hasResource, resourceLabel, bindingLabel, makeRoleKey, isClusterAdminEquivalent, WRITE_VERBS } from '../utils';
 import type { Role, RoleBinding } from '../../parser/types';
 import { findIndirectEscalationPaths } from '../../graph/paths';
 
@@ -36,6 +36,7 @@ export const RB2002: Rule = {
   id: 'RB2002',
   severity: 'critical',
   description: 'Role with `escalate` verb',
+  cisId: 'CIS 5.1.8',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of allRoles(ctx)) {
@@ -61,6 +62,7 @@ export const RB2003: Rule = {
   id: 'RB2003',
   severity: 'high',
   description: 'Role with `bind` verb',
+  cisId: 'CIS 5.1.8',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of allRoles(ctx)) {
@@ -86,6 +88,7 @@ export const RB2004: Rule = {
   id: 'RB2004',
   severity: 'high',
   description: 'Role can modify Role/ClusterRole (RBAC management)',
+  cisId: 'CIS 5.1.8',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of allRoles(ctx)) {
@@ -113,6 +116,7 @@ export const RB2005: Rule = {
   id: 'RB2005',
   severity: 'high',
   description: 'Role can modify RoleBinding/ClusterRoleBinding',
+  cisId: 'CIS 5.1.8',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     for (const role of allRoles(ctx)) {
@@ -140,6 +144,7 @@ export const RB2006: Rule = {
   id: 'RB2006',
   severity: 'high',
   description: 'Impersonation permissions (users, groups, serviceaccounts)',
+  cisId: 'CIS 5.1.8',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     const impersonateResources = ['users', 'groups', 'serviceaccounts'];
@@ -167,6 +172,7 @@ export const RB2007: Rule = {
   id: 'RB2007',
   severity: 'high',
   description: 'Role grants access to `tokenreviews` or `subjectaccessreviews`',
+  cisId: 'CIS 5.1.8',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     const authResources = ['tokenreviews', 'subjectaccessreviews'];
@@ -189,61 +195,9 @@ export const RB2007: Rule = {
   },
 };
 
-export const RB2008: Rule = {
-  id: 'RB2008',
-  severity: 'medium',
-  description: 'Role can create/update `ValidatingWebhookConfiguration`',
-  check(ctx: RuleContext): Violation[] {
-    const violations: Violation[] = [];
-    const writeVerbs = ['create', 'update', 'patch'];
-    for (const role of allRoles(ctx)) {
-      for (const rule of role.rules) {
-        const targetsWebhook = hasResource(rule, 'validatingwebhookconfigurations');
-        const hasWrite = writeVerbs.some(v => hasVerb(rule, v));
-        if (targetsWebhook && hasWrite) {
-          violations.push({
-            rule: 'RB2008',
-            severity: 'medium',
-            message: `${resourceLabel(role)} can create/update ValidatingWebhookConfiguration — can intercept API requests`,
-            resource: resourceLabel(role),
-            file: role.sourceFile,
-            line: role.sourceLine,
-          });
-          break;
-        }
-      }
-    }
-    return violations;
-  },
-};
-
-export const RB2009: Rule = {
-  id: 'RB2009',
-  severity: 'medium',
-  description: 'Role can create/update `MutatingWebhookConfiguration`',
-  check(ctx: RuleContext): Violation[] {
-    const violations: Violation[] = [];
-    const writeVerbs = ['create', 'update', 'patch'];
-    for (const role of allRoles(ctx)) {
-      for (const rule of role.rules) {
-        const targetsWebhook = hasResource(rule, 'mutatingwebhookconfigurations');
-        const hasWrite = writeVerbs.some(v => hasVerb(rule, v));
-        if (targetsWebhook && hasWrite) {
-          violations.push({
-            rule: 'RB2009',
-            severity: 'medium',
-            message: `${resourceLabel(role)} can create/update MutatingWebhookConfiguration — can modify API requests`,
-            resource: resourceLabel(role),
-            file: role.sourceFile,
-            line: role.sourceLine,
-          });
-          break;
-        }
-      }
-    }
-    return violations;
-  },
-};
+// RB2008 and RB2009 removed — superseded by RB7001 (admission-webhooks.ts)
+// which covers both validating/mutating webhooks at higher severity (high vs medium)
+// and also catches the delete verb (disabling webhooks entirely).
 
 function resolveRoleForBinding(binding: RoleBinding, graph: ResourceGraph): Role | undefined {
   if (binding.roleRef.kind === 'ClusterRole') {
@@ -290,6 +244,7 @@ export const RB2010: Rule = {
   id: 'RB2010',
   severity: 'high',
   description: 'Detected privilege escalation chain (A → B → cluster-admin)',
+  cisId: 'CIS 5.1.1',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     const trusted = new Set(ctx.config.trustedClusterAdminBindings);
@@ -366,6 +321,7 @@ export const RB2011: Rule = {
   id: 'RB2011',
   severity: 'medium',
   description: 'Role grants write access to ValidatingAdmissionPolicies (Kubernetes 1.26+)',
+  cisId: 'CIS 5.1.3',
   check(ctx: RuleContext): Violation[] {
     const violations: Violation[] = [];
     const allRolesList = [...ctx.graph.roles.values(), ...ctx.graph.clusterRoles.values()];
@@ -393,7 +349,47 @@ export const RB2011: Rule = {
   },
 };
 
+export const RB2012: Rule = {
+  id: 'RB2012',
+  severity: 'high',
+  description: 'Role can approve CertificateSigningRequests — allows issuing certificates for arbitrary identities',
+  cisId: 'CIS 5.1.8',
+  check(ctx: RuleContext): Violation[] {
+    const violations: Violation[] = [];
+    for (const role of allRoles(ctx)) {
+      let flagged = false;
+      for (const rule of role.rules) {
+        const csrApiGroup =
+          rule.apiGroups.includes('certificates.k8s.io') || rule.apiGroups.includes('*');
+        // Pattern 1: update/patch on certificatesigningrequests/approval subresource
+        const approvalSubresource = hasResource(rule, 'certificatesigningrequests/approval');
+        if (csrApiGroup && approvalSubresource && hasAnyVerb(rule, ['update', 'patch'])) {
+          flagged = true;
+          break;
+        }
+        // Pattern 2: approve verb on signers resource
+        const signers = hasResource(rule, 'signers');
+        if (csrApiGroup && signers && hasVerb(rule, 'approve')) {
+          flagged = true;
+          break;
+        }
+      }
+      if (flagged) {
+        violations.push({
+          rule: 'RB2012',
+          severity: 'high',
+          message: `${resourceLabel(role)} can approve CertificateSigningRequests — allows issuing TLS certificates for any identity including cluster-admin`,
+          resource: resourceLabel(role),
+          file: role.sourceFile,
+          line: role.sourceLine,
+        });
+      }
+    }
+    return violations;
+  },
+};
+
 export const RB2_RULES: Rule[] = [
   RB2001, RB2002, RB2003, RB2004, RB2005,
-  RB2006, RB2007, RB2008, RB2009, RB2010, RB2011,
+  RB2006, RB2007, RB2010, RB2011, RB2012,
 ];
